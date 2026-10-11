@@ -47,7 +47,7 @@ jobs:
       - name: Type-check
         run: pnpm typecheck
 
-      - name: Unit and architecture tests with coverage gates
+      - name: Tests (unit, architecture, integration, security) with coverage gates
         run: pnpm test:coverage
 
       - name: Build

@@ -23,6 +23,14 @@ export default defineConfig({
         extends: true,
         test: { name: 'architecture', include: ['tests/architecture/**/*.test.ts'] },
       },
+      {
+        extends: true,
+        test: { name: 'integration', include: ['tests/integration/**/*.test.ts'] },
+      },
+      {
+        extends: true,
+        test: { name: 'security', include: ['tests/security/**/*.test.ts'] },
+      },
     ],
     coverage: {
       provider: 'v8',

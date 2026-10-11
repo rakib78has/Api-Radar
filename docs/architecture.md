@@ -5,15 +5,33 @@ runner (automated regression testing) share one analysis engine.
 
 ## Workspace layout
 
-| Path                 | Status (Phase 1)               | Responsibility                                           |
-| -------------------- | ------------------------------ | -------------------------------------------------------- |
-| `packages/contracts` | Started                        | Shared types and Zod runtime schemas                     |
-| `packages/core`      | Started                        | Normalisation, fingerprinting, detection, rules          |
-| `packages/storage`   | Not created yet (Phase 3)      | Persistence adapters, session lifecycle and retention    |
-| `packages/reporting` | Not created yet (Phase 3 to 5) | Sanitised JSON, CSV and HTML reports                     |
-| `apps/extension`     | Not created yet (Phase 3)      | MV3 capture, messaging, React UI                         |
-| `apps/runner`        | Not created yet (Phase 4)      | Playwright fixtures, scenarios, baseline comparison      |
-| `tests/architecture` | Added                          | Repository-wide rules, such as package import boundaries |
+| Path                  | Status (Phase 2)               | Responsibility                                                   |
+| --------------------- | ------------------------------ | ---------------------------------------------------------------- |
+| `packages/contracts`  | Implemented                    | Types, Zod runtime schemas, size limits, safe parsing            |
+| `packages/core`       | Implemented                    | Normalisation, redaction, fingerprints, detectors A–E, baselines |
+| `packages/storage`    | Not created yet (Phase 3)      | Persistence adapters, session lifecycle and retention            |
+| `packages/reporting`  | Not created yet (Phase 3 to 5) | Sanitised JSON, CSV and HTML reports                             |
+| `apps/extension`      | Not created yet (Phase 3)      | MV3 capture, messaging, React UI                                 |
+| `apps/runner`         | Not created yet (Phase 4)      | Playwright fixtures, scenarios, baseline comparison              |
+| `tests/architecture`  | Active                         | Repository-wide rules, such as package import boundaries         |
+| `tests/integration`   | Active                         | Full pipeline across packages; example rule files                |
+| `tests/security`      | Active                         | Redaction canaries, hostile rule files                           |
+| `examples/test-rules` | Active                         | Example rule sets, validated by the integration suite            |
+
+### Inside `@api-qa/core`
+
+| Folder           | Contents                                                               |
+| ---------------- | ---------------------------------------------------------------------- |
+| `normalization/` | Method, resource type, URL and body sanitisation; `normalizeRequest`   |
+| `rules/`         | Endpoint pattern matcher; compiled endpoint rules and polling policies |
+| `detection/`     | One module per detector, plus shared request and finding helpers       |
+| `confidence/`    | Severity and confidence classification                                 |
+| `analysis/`      | `analyzeRequests` (runs every detector) and endpoint statistics        |
+| `regression/`    | `createBaseline`, `compareWithBaseline`                                |
+| `hash.ts`        | FNV-1a 64 over UTF-8                                                   |
+
+Detection behaviour is specified in [detection-rules.md](detection-rules.md), and the privacy
+model in [security.md](security.md).
 
 Packages are created only when there is real code for them, so the workspace never contains
 empty placeholder packages. `pnpm-workspace.yaml` already includes `apps/*`.
@@ -91,3 +109,25 @@ Linting uses typescript-eslint `strictTypeChecked` and `stylisticTypeChecked`.
 | @types/node                  | 24.x    | Root tooling and repository tests only, never `packages` |
 
 All versions are pinned exactly, and CI installs with `--frozen-lockfile`.
+
+### ADR-006: Core uses the WHATWG `URL` class through a minimal declaration
+
+URL parsing must match the browser's exactly, including IDN hosts, default ports, percent-encoding
+and dot segments. Every runtime core targets (Chrome extension contexts, web pages, Node.js 24)
+provides the WHATWG `URL` class. Enabling the `DOM` or Node.js type libraries would also expose
+`window`, `document` and `fs`, so `packages/core/src/platform.d.ts` instead declares only the four
+`URL` members core reads. Query strings are parsed by hand, so `URLSearchParams` is not needed.
+
+### ADR-007: Unavailable data is `null`, never guessed
+
+Capture sources differ in what they report. For example, webRequest has no body for most
+requests, and Playwright has no tab id. Every such field is `T | null` in the contracts, and
+detectors lower their confidence instead of assuming a value. Fields are `null` rather than
+optional, so serialised sessions always have the same shape.
+
+### ADR-008: Fingerprints are computed from sanitised data only
+
+`requestKey` hashes the sanitised path (tokens and e-mails replaced), the query without sensitive
+values, and a hash of the redacted body. FNV-1a is not a cryptographic hash, so this ensures a
+fingerprint never encodes a secret. The cost: two requests that differ only in a redacted value are
+treated as equivalent. See the residual risks in [security.md](security.md).

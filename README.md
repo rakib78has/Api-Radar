@@ -13,9 +13,24 @@ It will ship as two front ends on one shared analysis engine:
 1. A **Chrome extension** (Manifest V3) for manual testing.
 2. A **Playwright runner** for automated regression testing in CI.
 
-> **Status: Phase 1 (repository foundation).** This phase sets up the monorepo, strict
-> TypeScript, linting, formatting, tests, coverage gates and CI. There is no extension, runner or
-> detection logic yet. See [Roadmap](#roadmap).
+> **Status: Phase 2 (analysis engine) complete.** The shared contracts and detection engine are
+> implemented and tested. There is no Chrome extension or Playwright runner yet. See
+> [Roadmap](#roadmap).
+
+## What it detects
+
+| Detector                  | Reports                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------ |
+| Duplicate requests        | Equivalent requests from one page within a time window, rated by impact              |
+| Excessive polling         | Polling faster than a configured interval and tolerance                              |
+| Retry loops               | Retries beyond the allowed attempts, or faster than the minimum delay                |
+| Requests after navigation | Calls from a page the user already left                                              |
+| Endpoint rules            | Required, forbidden, exact, minimum and maximum call counts; unexpected endpoints    |
+| Regression                | New or missing endpoints, more calls, higher failure rates, slower p95, new findings |
+
+How each one decides is documented in [docs/detection-rules.md](docs/detection-rules.md). Example
+rule files are in [examples/test-rules](examples/test-rules). Sensitive data is redacted before
+anything is stored; see [docs/security.md](docs/security.md).
 
 ## Requirements
 
@@ -49,6 +64,8 @@ pnpm check      # runs every quality gate, the same steps as CI
 | `pnpm test`              | All Vitest projects                                           |
 | `pnpm test:unit`         | Unit tests (`packages/*/tests`)                               |
 | `pnpm test:architecture` | Package-boundary rules (`tests/architecture`)                 |
+| `pnpm test:integration`  | Cross-package pipeline and example rule files                 |
+| `pnpm test:security`     | Redaction canaries and hostile input                          |
 | `pnpm test:coverage`     | Tests with coverage gates; HTML report in `coverage/`         |
 | `pnpm test:watch`        | Vitest in watch mode                                          |
 | `pnpm build`             | `tsc -b` builds every package to `dist/`                      |
@@ -58,11 +75,16 @@ pnpm check      # runs every quality gate, the same steps as CI
 
 ```
 packages/
-  contracts/      shared types and Zod schemas (no browser or Node.js APIs)
-  core/           analysis engine (no Chrome, React, Playwright or Node.js APIs)
+  contracts/      types, Zod schemas, size limits, safe parsing (no browser or Node.js APIs)
+  core/           normalisation, redaction, fingerprints, detectors, baselines
+                  (no Chrome, React, Playwright or Node.js APIs)
 tests/
   architecture/   repository-wide rules, such as import boundaries
-docs/             architecture, testing strategy, CI/CD
+  integration/    full pipeline across packages
+  security/       redaction canaries, hostile input
+examples/
+  test-rules/     example detection rule files
+docs/             architecture, detection rules, security, testing strategy, CI/CD
 .github/workflows/ci.yml
 ```
 
@@ -88,8 +110,8 @@ None. No `.env` file is needed.
 | Phase | Scope                                                                 | Status   |
 | ----- | --------------------------------------------------------------------- | -------- |
 | 1     | Monorepo, strict TS, ESLint, Prettier, Vitest, CI                     | Complete |
-| 2     | Contracts and analysis engine: normalisation, fingerprints, detection | Next     |
-| 3     | Chrome extension: capture, messaging, UI, storage, export             | Planned  |
+| 2     | Contracts and analysis engine: normalisation, fingerprints, detection | Complete |
+| 3     | Chrome extension: capture, messaging, UI, storage, export             | Next     |
 | 4     | Playwright runner, controlled test app, baselines                     | Planned  |
 | 5     | Security pipeline, redaction tests, release packaging                 | Planned  |
 
