@@ -1,0 +1,4 @@
+# Normalise line endings so Prettier checks agree on Windows and Linux CI.
+* text=auto eol=lf
+*.png binary
+*.zip binary

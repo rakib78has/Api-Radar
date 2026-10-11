@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Type-check config for a workspace's sources and tests. Workspace packages resolve to their TypeScript sources, so checking needs no prior build. Build configs (tsconfig.build.json) do not extend this file; they resolve packages through their dist/ exports.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@api-qa/contracts": ["${configDir}/../../packages/contracts/src/index.ts"],
+      "@api-qa/core": ["${configDir}/../../packages/core/src/index.ts"]
+    }
+  }
+}

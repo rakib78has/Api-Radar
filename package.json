@@ -1,0 +1,37 @@
+{
+  "name": "api-qa-inspector",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Chrome extension and Playwright runner that detect duplicate, unexpected and regressed API calls.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "packageManager": "pnpm@10.34.6",
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "pnpm": ">=10.34.0 <11"
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "clean": "tsc -b tsconfig.build.json --clean",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json && pnpm -r typecheck",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:architecture": "vitest run --project architecture",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "^24.19.2",
+    "@vitest/coverage-v8": "5.0.3",
+    "eslint": "10.12.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.1",
+    "vitest": "5.0.3"
+  }
+}

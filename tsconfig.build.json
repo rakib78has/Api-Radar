@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Solution file: `tsc -b tsconfig.build.json` builds every package in dependency order.",
+  "files": [],
+  "references": [
+    { "path": "./packages/contracts/tsconfig.build.json" },
+    { "path": "./packages/core/tsconfig.build.json" }
+  ]
+}
