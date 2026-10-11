@@ -9,15 +9,15 @@
 **Concurrency:** a newer run cancels an older run on the same pull request. Runs on `main` are
 never cancelled.
 
-| Step               | Command                          | Fails when                                |
-| ------------------ | -------------------------------- | ----------------------------------------- |
-| Install            | `pnpm install --frozen-lockfile` | The lockfile is out of date               |
-| Formatting         | `pnpm format:check`              | Any file differs from Prettier output     |
-| Lint               | `pnpm lint`                      | Any error, or any warning                 |
-| Type-check         | `pnpm typecheck`                 | Root or any workspace fails `tsc`         |
-| Tests and coverage | `pnpm test:coverage`             | A test fails or a coverage gate is missed |
-| Build              | `pnpm build`                     | `tsc -b` fails                            |
-| Coverage artifact  | `upload-artifact`                | Never; it uploads even after failures     |
+| Step               | Command                           | Fails when                                |
+| ------------------ | --------------------------------- | ----------------------------------------- |
+| Install            | `pnpm install --frozen-lockfile`  | The lockfile is out of date               |
+| Formatting         | `pnpm format:check`               | Any file differs from Prettier output     |
+| Lint               | `pnpm lint`                       | Any error, or any warning                 |
+| Type-check         | `pnpm typecheck`                  | Root or any workspace fails `tsc`         |
+| Tests and coverage | `pnpm test:coverage` (all suites) | A test fails or a coverage gate is missed |
+| Build              | `pnpm build`                      | `tsc -b` fails                            |
+| Coverage artifact  | `upload-artifact`                 | Never; it uploads even after failures     |
 
 Phase 1 uses a single job because the whole run takes seconds. Later phases will split out
 parallel jobs where they save time: Playwright browser tests, extension smoke tests, manifest

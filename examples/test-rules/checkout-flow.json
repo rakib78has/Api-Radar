@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "name": "Checkout flow",
+  "description": "Expected API behaviour from opening the cart to the order confirmation page.",
+  "normalization": {
+    "ignoredQueryParams": ["_"],
+    "sensitiveNames": ["customerRef"]
+  },
+  "duplicates": { "windowMs": 1000 },
+  "retries": { "maxAttempts": 3, "minDelayMs": 200 },
+  "navigation": { "graceMs": 250 },
+  "polling": [
+    {
+      "id": "order-status-poll",
+      "match": { "method": "GET", "path": "/api/orders/:id/status" },
+      "expectedIntervalMs": 5000,
+      "tolerance": 0.2
+    }
+  ],
+  "endpoints": [
+    {
+      "id": "load-cart",
+      "description": "The cart loads once, or twice if the user refreshes it.",
+      "match": { "method": "GET", "path": "/api/cart" },
+      "required": true,
+      "maxCount": 2
+    },
+    {
+      "id": "place-order",
+      "description": "Exactly one order is created; a single retry is acceptable.",
+      "match": { "method": "POST", "path": "/api/orders" },
+      "expectedCount": 1,
+      "maxRetryAttempts": 2
+    },
+    {
+      "id": "no-legacy-api",
+      "description": "The v1 API was retired.",
+      "match": { "path": "/api/v1/**" },
+      "forbidden": true
+    },
+    {
+      "id": "ignore-telemetry",
+      "match": { "path": "https://telemetry.example.com/**" },
+      "excluded": true
+    }
+  ],
+  "regression": {
+    "countToleranceAbsolute": 1,
+    "durationToleranceRatio": 0.5
+  }
+}

@@ -1,10 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "//": "Root-level TypeScript files (tool configs and repository tests). These run in Node.js.",
+  "//": "Root-level TypeScript files (tool configs and repository tests). These run in Node.js and resolve workspace packages to their sources, like tsconfig.workspace.json.",
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@api-qa/contracts": ["./packages/contracts/src/index.ts"],
+      "@api-qa/core": ["./packages/core/src/index.ts"]
+    }
   },
   "include": ["*.ts", "tests/**/*.ts"]
 }
