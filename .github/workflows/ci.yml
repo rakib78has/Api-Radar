@@ -47,6 +47,9 @@ jobs:
       - name: Type-check
         run: pnpm typecheck
 
+      - name: Extension icons match their generator
+        run: pnpm icons:check
+
       - name: Tests (unit, architecture, extension, integration, security) with coverage gates
         run: pnpm test:coverage
 
@@ -143,3 +146,59 @@ jobs:
             test-results/runner/
           retention-days: 14
           if-no-files-found: ignore
+
+  security:
+    name: Security checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm (version from package.json "packageManager")
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # strictDepBuilds (pnpm-workspace.yaml) fails the install if a dependency
+      # wants to run an unapproved install script.
+      - name: Install dependencies (frozen lockfile, no install scripts)
+        run: pnpm install --frozen-lockfile
+
+      - name: Scan for committed secrets
+        run: pnpm security:secrets
+
+      - name: Lockfile and registry policy
+        run: pnpm security:lockfile
+
+      - name: Dependency vulnerability audit (high and critical)
+        run: pnpm security:audit
+
+      - name: Redaction, hostile-input and fuzz tests
+        run: pnpm test:security
+
+  dependency-review:
+    name: Dependency review
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Fails the pull request if it adds a dependency with a known high or critical
+      # vulnerability, or with a licence outside the allowlist.
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          # The licences in the dependency tree today, plus 0BSD. A new one needs a deliberate review.
+          allow-licenses: MIT, ISC, Apache-2.0, BSD-2-Clause, BSD-3-Clause, 0BSD, BlueOak-1.0.0, MPL-2.0

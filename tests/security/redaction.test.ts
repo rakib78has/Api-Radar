@@ -11,6 +11,13 @@ import {
   normalizeNavigation,
   normalizeRequest,
 } from '@api-qa/core';
+import {
+  buildReport,
+  endpointsToCsv,
+  findingsToCsv,
+  reportToHtml,
+  reportToJson,
+} from '@api-qa/reporting';
 import { describe, expect, it } from 'vitest';
 
 import { SHOP, observation } from '../support/capture.js';
@@ -166,5 +173,45 @@ describe('hostile rule files', () => {
     );
     expect(result.ok).toBe(false);
     expect(Object.prototype).not.toHaveProperty('strictEndpoints');
+  });
+});
+
+describe('sensitive-data redaction in exported reports', () => {
+  const captured = session();
+  const analysis = analyzeRequests(captured);
+  const built = buildReport({
+    session: captured,
+    analysis,
+    regression: compareWithBaseline(analysis, {
+      ...createBaseline(analysis, { name: 'b', createdAt: 0 }),
+      endpoints: [],
+    }),
+    generatedAt: 0,
+    toolVersion: '0.1.0',
+  });
+
+  it('builds a valid report', () => {
+    expect(built.ok).toBe(true);
+  });
+
+  const report = built.ok ? built.value : null;
+  const exports =
+    report === null
+      ? {}
+      : {
+          json: reportToJson(report),
+          html: reportToHtml(report),
+          findingsCsv: findingsToCsv(report),
+          endpointsCsv: endpointsToCsv(report),
+        };
+
+  it.each(Object.entries(CANARIES))('never exports the %s canary', (_channel, canary) => {
+    for (const [format, text] of Object.entries(exports)) {
+      expect(text.includes(canary), `${format} contains ${canary}`).toBe(false);
+      expect(
+        text.includes(encodeURIComponent(canary)),
+        `${format} contains encoded ${canary}`,
+      ).toBe(false);
+    }
   });
 });

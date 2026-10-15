@@ -4,3 +4,8 @@ packages:
 
 # Lets package scripts use VAR=value prefixes on Windows as well as Linux.
 shellEmulator: true
+
+# Supply chain: fail the install if a dependency wants to run an unapproved install script.
+strictDepBuilds: true
+# Supply chain: never resolve a package version published less than 3 days ago.
+minimumReleaseAge: 4320

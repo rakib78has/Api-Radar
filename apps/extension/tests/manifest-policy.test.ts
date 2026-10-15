@@ -8,7 +8,8 @@ import { findRemoteCode, validateManifest } from '../scripts/manifest-policy.ts'
 const source: unknown = JSON.parse(
   readFileSync(new URL('../manifest.json', import.meta.url), 'utf8'),
 );
-const FILES = new Set(['background.js', 'popup/index.html', 'panel/index.html']);
+const ICONS = [16, 32, 48, 128].map((size) => `icons/icon-${String(size)}.png`);
+const FILES = new Set(['background.js', 'popup/index.html', 'panel/index.html', ...ICONS]);
 
 function manifest(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   const base = typeof source === 'object' && source !== null ? source : {};
@@ -79,8 +80,20 @@ describe('validateManifest', () => {
 
   it('requires referenced files to exist in the build', () => {
     expect(
-      validateManifest(manifest(), { expectedVersion: '1.2.3', files: new Set(['background.js']) }),
+      validateManifest(manifest(), {
+        expectedVersion: '1.2.3',
+        files: new Set(['background.js', ...ICONS]),
+      }),
     ).toEqual(['popup/index.html is referenced by the manifest but missing from the build']);
+  });
+
+  it('requires every referenced icon, including the toolbar icon', () => {
+    const files = new Set([...FILES].filter((file) => file !== 'icons/icon-16.png'));
+    // icon-16 is referenced twice: by "icons" and by "action.default_icon".
+    expect(validateManifest(manifest(), { expectedVersion: '1.2.3', files })).toEqual([
+      'icons/icon-16.png is referenced by the manifest but missing from the build',
+      'icons/icon-16.png is referenced by the manifest but missing from the build',
+    ]);
   });
 
   it('rejects malformed manifests', () => {
