@@ -2,3 +2,8 @@ dist/
 coverage/
 pnpm-lock.yaml
 *.tsbuildinfo
+# Deliberately malformed fixture for the invalid-baseline scenario.
+apps/runner/baselines/invalid/not-json.json
+reports/
+test-results/
+playwright-report/

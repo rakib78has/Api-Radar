@@ -1,3 +1,6 @@
 packages:
   - 'packages/*'
   - 'apps/*'
+
+# Lets package scripts use VAR=value prefixes on Windows as well as Linux.
+shellEmulator: true

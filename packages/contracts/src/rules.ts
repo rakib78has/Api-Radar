@@ -129,6 +129,13 @@ export const detectionRuleSetSchema = z
         enabled: z.boolean().default(true),
         /** Requests this soon after a navigation are tolerated (unload beacons, in-flight starts). */
         graceMs: z.number().int().min(0).max(60_000).default(100),
+        /**
+         * Also check same-document (history API) route changes: report endpoints
+         * that repeated on the old route and kept being called after it. Off by
+         * default because app-wide pollers legitimately span routes; give those a
+         * polling policy to exempt them.
+         */
+        routeChanges: z.boolean().default(false),
       })
       .prefault({}),
     polling: z.array(pollingPolicySchema).max(LIMITS.rulesPerSet).default([]),
@@ -145,6 +152,8 @@ export const detectionRuleSetSchema = z
         failureRateTolerance: z.number().min(0).max(1).default(0.05),
         /** Allowed relative increase in p95 duration. */
         durationToleranceRatio: z.number().min(0).max(100).default(0.5),
+        /** p95 must also rise by more than this many milliseconds; filters jitter on fast endpoints. */
+        durationToleranceMs: z.number().min(0).max(600_000).default(50),
         reportMissingEndpoints: z.boolean().default(true),
       })
       .prefault({}),

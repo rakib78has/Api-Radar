@@ -90,3 +90,73 @@ describe('requests after navigation', () => {
     expect(analyse(late, [...NAVIGATIONS].reverse())).toEqual(analyse(late));
   });
 });
+
+describe('route changes in single-page apps (navigation.routeChanges)', () => {
+  // One document (doc-1) that changes route at 5000 via the history API.
+  const ROUTES: NavigationEvent[] = [
+    navigation('load', 0, 'doc-1'),
+    navigation('to-settings', 5_000, 'doc-1'),
+  ];
+  const ON = ruleSet({ navigation: { routeChanges: true }, duplicates: { enabled: false } });
+
+  const poll = (id: string, timestamp: number, path = '/api/status') =>
+    request({ id, timestamp, url: `${ORIGIN}${path}`, context: { documentId: 'doc-1' } });
+
+  it('reports an endpoint that kept repeating after the route changed', () => {
+    const requests = [poll('a', 1_000), poll('b', 3_000), poll('c', 6_000), poll('d', 8_000)];
+    const findings = analyse(requests, ROUTES, ON);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      type: 'request-after-navigation',
+      confidence: 'medium',
+      title: 'GET calls continued after a route change',
+      evidence: { requestIds: ['c', 'd'], requestCount: 2 },
+    });
+    expect(findings[0]?.evidence.measurements).toMatchObject({
+      callsBefore: 2,
+      callsAfter: 2,
+      routeChangedAt: 5_000,
+    });
+  });
+
+  it('is off by default', () => {
+    const requests = [poll('a', 1_000), poll('b', 3_000), poll('c', 6_000)];
+    expect(analyse(requests, ROUTES, ruleSet({ duplicates: { enabled: false } }))).toEqual([]);
+  });
+
+  it('ignores a single call before the change, calls only after it, and the grace period', () => {
+    expect(analyse([poll('a', 1_000), poll('c', 6_000)], ROUTES, ON)).toEqual([]);
+    expect(analyse([poll('c', 6_000), poll('d', 7_000)], ROUTES, ON)).toEqual([]);
+    expect(analyse([poll('a', 1_000), poll('b', 3_000), poll('c', 5_050)], ROUTES, ON)).toEqual([]);
+  });
+
+  it('stops at the next navigation', () => {
+    const routes = [...ROUTES, navigation('to-home', 7_000, 'doc-1')];
+    const requests = [poll('a', 1_000), poll('b', 3_000), poll('c', 7_500)];
+    // c belongs to the third route, whose previous route made no calls.
+    expect(analyse(requests, routes, ON)).toEqual([]);
+  });
+
+  it('treats a new document as a replacement, not a route change', () => {
+    const replaced = [navigation('load', 0, 'doc-1'), navigation('next', 5_000, 'doc-2')];
+    const findings = analyse([poll('a', 1_000), poll('b', 3_000), poll('c', 6_000)], replaced, ON);
+    expect(findings.map((finding) => finding.confidence)).toEqual(['high']);
+  });
+
+  it('exempts endpoints with a polling policy', () => {
+    const rules = ruleSet({
+      navigation: { routeChanges: true },
+      polling: [{ id: 'status', match: { path: '/api/status' }, expectedIntervalMs: 1_000 }],
+    });
+    const requests = [poll('a', 1_000), poll('b', 3_000), poll('c', 6_000), poll('d', 8_000)];
+    expect(analyse(requests, ROUTES, rules)).toEqual([]);
+  });
+
+  it('only compares requests from the same document', () => {
+    const other = (id: string, timestamp: number) =>
+      request({ id, timestamp, url: `${ORIGIN}/api/status`, context: { documentId: 'doc-x' } });
+    expect(analyse([other('a', 1_000), other('b', 3_000), other('c', 6_000)], ROUTES, ON)).toEqual(
+      [],
+    );
+  });
+});

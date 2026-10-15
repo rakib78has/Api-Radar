@@ -31,6 +31,10 @@ export default defineConfig({
       },
       {
         extends: true,
+        test: { name: 'runner', include: ['apps/runner/tests/**/*.test.ts'] },
+      },
+      {
+        extends: true,
         test: { name: 'integration', include: ['tests/integration/**/*.test.ts'] },
       },
       {
@@ -40,12 +44,20 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      include: ['packages/*/src/**/*.ts', 'apps/extension/src/**/*.{ts,tsx}'],
+      include: [
+        'packages/*/src/**/*.ts',
+        'apps/extension/src/**/*.{ts,tsx}',
+        'apps/runner/src/**/*.ts',
+      ],
       exclude: [
         // Chrome wiring and React views are exercised by the Playwright extension suite.
         'apps/extension/src/background/service-worker.ts',
         'apps/extension/src/shared/{chrome-store,client,zod-config}.ts',
         'apps/extension/src/{popup,panel}/**',
+        // Playwright glue, the test app and scenarios run in the Playwright suite (pnpm test:regression).
+        'apps/runner/src/capture/recorder.ts',
+        'apps/runner/src/fixtures/{api-qa,serve-test-app,test-app}.ts',
+        'apps/runner/src/scenarios/**',
       ],
       reporter: ['text', 'html', 'json-summary', 'lcov'],
       reportsDirectory: 'coverage',
@@ -57,6 +69,7 @@ export default defineConfig({
         'packages/storage/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
         'packages/reporting/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
         'apps/extension/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
+        'apps/runner/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
       },
     },
   },

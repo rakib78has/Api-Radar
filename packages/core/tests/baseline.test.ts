@@ -136,6 +136,14 @@ describe('compareWithBaseline (rule E)', () => {
     expect(compare(bigSlow, bigBaseline).findings[0]?.confidence).toBe('medium');
   });
 
+  it('ignores p95 increases below the absolute tolerance', () => {
+    // 10 ms -> 30 ms is +200%, but only 20 ms slower: jitter on a fast endpoint.
+    const jittery = calls('/api/items', 4, { durationMs: 30 });
+    expect(compare(jittery, baseline).passed).toBe(true);
+    const strict = ruleSet({ regression: { durationToleranceMs: 0 } });
+    expect(compare(jittery, baseline, strict).findings[0]?.type).toBe('regression-duration');
+  });
+
   it('skips timing comparison when either side has no timing', () => {
     const untimed = calls('/api/items', 4, { durationMs: null });
     expect(compare(untimed, baseline).passed).toBe(true);

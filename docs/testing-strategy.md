@@ -2,16 +2,17 @@
 
 ## Test layers
 
-| Layer           | Tool            | Location               | Command                  | Status                  |
-| --------------- | --------------- | ---------------------- | ------------------------ | ----------------------- |
-| Unit            | Vitest          | `packages/*/tests`     | `pnpm test:unit`         | Active                  |
-| Architecture    | Vitest          | `tests/architecture`   | `pnpm test:architecture` | Active                  |
-| Extension logic | Vitest          | `apps/extension/tests` | `pnpm test:extension`    | Active                  |
-| Integration     | Vitest          | `tests/integration`    | `pnpm test:integration`  | Active                  |
-| Security        | Vitest          | `tests/security`       | `pnpm test:security`     | Active; more in Phase 5 |
-| Extension E2E   | Playwright Test | `tests/e2e`            | `pnpm test:e2e`          | Active                  |
-| Extension smoke | Playwright Test | `tests/e2e` (`@smoke`) | `pnpm test:smoke`        | Active                  |
-| Regression E2E  | Playwright Test | `apps/runner`          | Not yet                  | Phase 4                 |
+| Layer           | Tool            | Location                    | Command                  | Status                  |
+| --------------- | --------------- | --------------------------- | ------------------------ | ----------------------- |
+| Unit            | Vitest          | `packages/*/tests`          | `pnpm test:unit`         | Active                  |
+| Architecture    | Vitest          | `tests/architecture`        | `pnpm test:architecture` | Active                  |
+| Extension logic | Vitest          | `apps/extension/tests`      | `pnpm test:extension`    | Active                  |
+| Integration     | Vitest          | `tests/integration`         | `pnpm test:integration`  | Active                  |
+| Security        | Vitest          | `tests/security`            | `pnpm test:security`     | Active; more in Phase 5 |
+| Extension E2E   | Playwright Test | `tests/e2e`                 | `pnpm test:e2e`          | Active                  |
+| Extension smoke | Playwright Test | `tests/e2e` (`@smoke`)      | `pnpm test:smoke`        | Active                  |
+| Runner logic    | Vitest          | `apps/runner/tests`         | `pnpm test:runner`       | Active                  |
+| Regression E2E  | Playwright Test | `apps/runner/src/scenarios` | `pnpm test:regression`   | Active                  |
 
 `pnpm test` runs every Vitest project. `pnpm test:coverage` also applies the coverage gates.
 
@@ -26,6 +27,7 @@ Gates are enforced per directory in `vitest.config.ts`, and a run fails below th
 | `packages/storage/src/**`       | 80%        | 80%      | 80%       | 80%   |
 | `packages/reporting/src/**`     | 80%        | 80%      | 80%       | 80%   |
 | `apps/extension/src/**` (logic) | 80%        | 80%      | 80%       | 80%   |
+| `apps/runner/src/**` (logic)    | 80%        | 80%      | 80%       | 80%   |
 
 Coverage counts every matching source file, not only files a test imports.
 
@@ -80,6 +82,31 @@ the production build except that it declares `host_permissions: ["http://127.0.0
 Automated browsers cannot click Chrome's permission prompt, so the test server is pre-granted.
 Everything after the grant (capture, storage, UI) is the production code path.
 `validate:manifest:e2e` checks that this is the only difference.
+
+## Regression runner scenarios
+
+`pnpm test:regression` runs 29 Playwright tests against the controlled test app. They passed
+87 of 87 runs with `--repeat-each=3`.
+
+| #   | Scenario                             | Test file                     | What it proves                                                                             |
+| --- | ------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------ |
+| 1   | Single API request                   | `network-patterns.spec.ts`    | Capture, document attribution and timing; no findings                                      |
+| 2   | Repeated identical GETs              | `network-patterns.spec.ts`    | One low-severity duplicate                                                                 |
+| 3   | Different query parameters           | `network-patterns.spec.ts`    | Not duplicates                                                                             |
+| 4   | Different resource identifiers       | `network-patterns.spec.ts`    | Same endpoint template, different operations, no duplicate                                 |
+| 5   | Legitimate concurrent requests       | `network-patterns.spec.ts`    | No findings                                                                                |
+| 6   | Configured retry sequences           | `retries-and-polling.spec.ts` | Retries within policy pass; loops and missing backoff are reported                         |
+| 7   | Excessive polling                    | `retries-and-polling.spec.ts` | Too-fast polling reported; compliant polling passes                                        |
+| 8   | Requests continuing after navigation | `navigation.spec.ts`          | SPA polling leak reported; fixed view passes; full loads get new documents                 |
+| 9   | Forbidden endpoint calls             | `endpoint-rules.spec.ts`      | Forbidden, required and exact-count rules                                                  |
+| 10  | Unexpected request-count increases   | `baselines.spec.ts`           | Matches the committed baseline; four calls against two regress                             |
+| 11  | Invalid baseline files               | `baselines.spec.ts`           | Malformed, wrong-schema, inconsistent, missing and path-escaping baselines are rejected    |
+| 12  | Sensitive-data redaction             | `redaction.spec.ts`           | Four planted secrets absent from session, analysis and every report                        |
+| 13  | Capture lifecycle                    | `lifecycle.spec.ts`           | Only start..stop is recorded; in-flight requests kept as unknown; misuse fails clearly     |
+| 14  | Regression report generation         | `baselines.spec.ts`           | JSON validates, HTML shows the verdict, CSV rows are correct, the assertion fails readably |
+
+The pure capture logic (`cdp-assembler.ts`), session building, the baseline store, the assertions
+and the report writer are also unit-tested with Vitest (`pnpm test:runner`, 80% gate).
 
 ## Not covered automatically
 

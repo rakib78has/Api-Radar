@@ -21,6 +21,7 @@ export default defineConfig([
     '**/*.tsbuildinfo',
     'test-results/',
     'playwright-report/',
+    'reports/',
   ]),
 
   js.configs.recommended,

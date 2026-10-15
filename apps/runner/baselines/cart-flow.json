@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "name": "cart-flow",
+  "createdAt": 1792080414725,
+  "ruleSetName": "Cart regression",
+  "endpoints": [
+    {
+      "endpoint": "GET http://127.0.0.1:47130/api/cart",
+      "requestCount": 2,
+      "failureCount": 0,
+      "timedRequestCount": 2,
+      "durationP50Ms": 4.2360000079497695,
+      "durationP95Ms": 7.476000013411976
+    }
+  ],
+  "findingKeys": []
+}

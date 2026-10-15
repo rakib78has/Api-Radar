@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "name": "No legacy API",
+  "endpoints": [
+    {
+      "id": "no-v1",
+      "description": "The v1 API was retired.",
+      "match": { "path": "/api/v1/**" },
+      "forbidden": true
+    },
+    {
+      "id": "items-once",
+      "match": { "method": "GET", "path": "/api/items" },
+      "required": true,
+      "expectedCount": 1
+    }
+  ]
+}

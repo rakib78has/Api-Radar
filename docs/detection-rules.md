@@ -165,6 +165,17 @@ are timers, polling or retries that outlive a page.
 Back-navigation to a cached document is handled: that document is current again, so its requests
 are not reported.
 
+#### Route changes in single-page apps (`navigation.routeChanges`, off by default)
+
+A navigation whose document id equals the previous navigation's in the same tab is a
+same-document (history API) route change.
+
+- **Reports:** an endpoint called at least twice on the old route and again after the change
+  (plus `graceMs`), before the next navigation. Severity medium, confidence medium.
+- **Exempt:** endpoints covered by a polling policy, because they are declared app-wide pollers.
+- **Capture sources:** the runner reports route changes through CDP. The extension records full
+  navigations only.
+
 ### Rule D: endpoint rules
 
 | Field                  | Finding when broken                                                              |
@@ -208,14 +219,14 @@ built from the pattern, so a hostile rule file cannot cause catastrophic backtra
 
 `compareWithBaseline(analysis, baseline, ruleSet)` reports:
 
-| Finding                       | When                                                                                                                     |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `regression-new-endpoint`     | Endpoint absent from the baseline                                                                                        |
-| `regression-missing-endpoint` | Baseline endpoint not called. Disable with `reportMissingEndpoints: false`                                               |
-| `regression-request-count`    | Count above `baseline + max(countToleranceAbsolute, ceil(baseline × countToleranceRatio))`. High if doubled              |
-| `regression-failure-rate`     | Failure rate rose by more than `failureRateTolerance`                                                                    |
-| `regression-duration`         | p95 above `baseline × (1 + durationToleranceRatio)`. Only when both sides have timing; confidence is low under 5 samples |
-| `regression-new-finding`      | A finding whose (type, endpoint) the baseline did not have                                                               |
+| Finding                       | When                                                                                                                                                                                                |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `regression-new-endpoint`     | Endpoint absent from the baseline                                                                                                                                                                   |
+| `regression-missing-endpoint` | Baseline endpoint not called. Disable with `reportMissingEndpoints: false`                                                                                                                          |
+| `regression-request-count`    | Count above `baseline + max(countToleranceAbsolute, ceil(baseline × countToleranceRatio))`. High if doubled                                                                                         |
+| `regression-failure-rate`     | Failure rate rose by more than `failureRateTolerance`                                                                                                                                               |
+| `regression-duration`         | p95 above `baseline × (1 + durationToleranceRatio)` **and** more than `durationToleranceMs` (default 50 ms) above the baseline. Only when both sides have timing; confidence is low under 5 samples |
+| `regression-new-finding`      | A finding whose (type, endpoint) the baseline did not have                                                                                                                                          |
 
 `passed` is `true` only when there are no regression findings. Baselines loaded from disk must
 pass `parseBaseline`.
