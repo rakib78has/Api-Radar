@@ -9,6 +9,8 @@ export default defineConfig({
     alias: {
       '@api-qa/contracts': fromRoot('./packages/contracts/src/index.ts'),
       '@api-qa/core': fromRoot('./packages/core/src/index.ts'),
+      '@api-qa/storage': fromRoot('./packages/storage/src/index.ts'),
+      '@api-qa/reporting': fromRoot('./packages/reporting/src/index.ts'),
     },
   },
   test: {
@@ -25,6 +27,10 @@ export default defineConfig({
       },
       {
         extends: true,
+        test: { name: 'extension', include: ['apps/extension/tests/**/*.test.ts'] },
+      },
+      {
+        extends: true,
         test: { name: 'integration', include: ['tests/integration/**/*.test.ts'] },
       },
       {
@@ -34,7 +40,13 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      include: ['packages/*/src/**/*.ts'],
+      include: ['packages/*/src/**/*.ts', 'apps/extension/src/**/*.{ts,tsx}'],
+      exclude: [
+        // Chrome wiring and React views are exercised by the Playwright extension suite.
+        'apps/extension/src/background/service-worker.ts',
+        'apps/extension/src/shared/{chrome-store,client,zod-config}.ts',
+        'apps/extension/src/{popup,panel}/**',
+      ],
       reporter: ['text', 'html', 'json-summary', 'lcov'],
       reportsDirectory: 'coverage',
       thresholds: {
@@ -42,6 +54,9 @@ export default defineConfig({
         'packages/core/src/**': { statements: 90, branches: 90, functions: 90, lines: 90 },
         // Other critical business logic: 80% gate.
         'packages/contracts/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
+        'packages/storage/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
+        'packages/reporting/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
+        'apps/extension/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
       },
     },
   },

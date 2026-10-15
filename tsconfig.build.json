@@ -3,7 +3,17 @@
   "//": "Solution file: `tsc -b tsconfig.build.json` builds every package in dependency order.",
   "files": [],
   "references": [
-    { "path": "./packages/contracts/tsconfig.build.json" },
-    { "path": "./packages/core/tsconfig.build.json" }
+    {
+      "path": "./packages/contracts/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/core/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/storage/tsconfig.build.json"
+    },
+    {
+      "path": "./packages/reporting/tsconfig.build.json"
+    }
   ]
 }

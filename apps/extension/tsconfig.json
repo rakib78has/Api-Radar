@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Extension code: DOM, Chrome and Vite client types, no Node.js. Build scripts and vite.config.ts use tsconfig.node.json.",
+  "extends": "../../tsconfig.workspace.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["chrome", "vite/client"],
+    "jsx": "react-jsx"
+  },
+  "include": ["src", "tests", "scripts/manifest-policy.ts", "scripts/build-options.ts"],
+  "exclude": ["tests/manifest-policy.test.ts"]
+}

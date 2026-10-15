@@ -1,0 +1,26 @@
+{
+  "name": "@api-qa/reporting",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sanitised JSON, CSV and HTML reports for API QA Inspector.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@api-qa/contracts": "workspace:*"
+  }
+}

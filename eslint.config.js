@@ -14,7 +14,14 @@ const FORBIDDEN_IN_SHARED_PACKAGES = [
 ];
 
 export default defineConfig([
-  globalIgnores(['**/dist/', 'coverage/', '**/*.tsbuildinfo']),
+  globalIgnores([
+    '**/dist/',
+    '**/dist-e2e/',
+    'coverage/',
+    '**/*.tsbuildinfo',
+    'test-results/',
+    'playwright-report/',
+  ]),
 
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
@@ -51,6 +58,23 @@ export default defineConfig([
         { name: 'process', message: 'Shared packages must stay runtime-neutral.' },
       ],
     },
+  },
+
+  // Extension build scripts and Vite config run in Node.js and use their own tsconfig.
+  {
+    files: [
+      'apps/extension/vite.config.ts',
+      'apps/extension/scripts/**/*.ts',
+      'apps/extension/tests/manifest-policy.test.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: ['./apps/extension/tsconfig.node.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: { 'no-console': 'off' },
   },
 
   // Plain JavaScript config files are not part of any tsconfig project.

@@ -15,6 +15,8 @@ const packagesDir = join(repoRoot, 'packages');
 const ALLOWED_IMPORTS: Readonly<Record<string, readonly string[]>> = {
   contracts: ['zod'],
   core: ['@api-qa/contracts'],
+  storage: ['@api-qa/contracts', 'zod'],
+  reporting: ['@api-qa/contracts'],
 };
 
 function listTypeScriptFiles(dir: string): string[] {
