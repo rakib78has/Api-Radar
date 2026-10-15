@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "Cart regression",
+  "description": "Strict request counts for baseline comparison. Duplicates and timing are judged elsewhere: loopback durations under parallel test load are noise.",
+  "duplicates": {
+    "enabled": false
+  },
+  "regression": {
+    "countToleranceAbsolute": 0,
+    "countToleranceRatio": 0,
+    "durationToleranceMs": 600000
+  }
+}

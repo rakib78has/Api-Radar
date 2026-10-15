@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "Status polling",
+  "description": "The status endpoint should be polled once per second (20% tolerance).",
+  "polling": [
+    {
+      "id": "status-poll",
+      "match": { "method": "GET", "path": "/api/status" },
+      "expectedIntervalMs": 1000,
+      "tolerance": 0.2
+    }
+  ]
+}

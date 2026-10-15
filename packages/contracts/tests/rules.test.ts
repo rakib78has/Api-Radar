@@ -20,7 +20,7 @@ describe('detectionRuleSetSchema', () => {
       normalization: { ignoredQueryParams: [], sensitiveNames: [], maxBodyLength: 1_048_576 },
       duplicates: { enabled: true, windowMs: 1_000 },
       retries: { enabled: true, maxAttempts: 3, minDelayMs: 0, windowMs: 60_000 },
-      navigation: { enabled: true, graceMs: 100 },
+      navigation: { enabled: true, graceMs: 100, routeChanges: false },
       polling: [],
       endpoints: [],
       strictEndpoints: false,
@@ -29,6 +29,7 @@ describe('detectionRuleSetSchema', () => {
         countToleranceAbsolute: 0,
         failureRateTolerance: 0.05,
         durationToleranceRatio: 0.5,
+        durationToleranceMs: 50,
         reportMissingEndpoints: true,
       },
     });

@@ -9,7 +9,7 @@
 **Concurrency:** a newer run cancels an older run on the same pull request. Runs on `main` are
 never cancelled.
 
-Two jobs run in parallel. Each job installs from the frozen lockfile.
+Three jobs run in parallel. Each job installs from the frozen lockfile.
 
 ### Job `verify`
 
@@ -35,6 +35,18 @@ Two jobs run in parallel. Each job installs from the frozen lockfile.
 
 Traces and screenshots come from the local test application only. They never include a real
 site's data.
+
+### Job `regression`
+
+| Step      | Command                                             | Fails when                                                                                     |
+| --------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Install   | `pnpm install --frozen-lockfile`                    | The lockfile is out of date                                                                    |
+| Browser   | `pnpm exec playwright install --with-deps chromium` | The download fails                                                                             |
+| Scenarios | `pnpm test:regression`                              | A scenario fails or a run regresses against a committed baseline                               |
+| Artifacts | `upload-artifact` (always)                          | Never; uploads `reports/runner/` (JUnit XML, HTML) and `test-results/runner/` (API QA reports) |
+
+Baselines are changed only by committing a new `apps/runner/baselines/*.json`, so every change is
+reviewed in a pull request.
 
 ## Action pinning
 

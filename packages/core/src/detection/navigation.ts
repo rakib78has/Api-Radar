@@ -53,15 +53,98 @@ function replacementOf(request: CapturedRequest, history: TabHistory): Navigatio
 }
 
 /**
+ * Route changes: a navigation with the same document id as the navigation
+ * before it in the tab is a same-document (history API) navigation. An
+ * endpoint called at least twice on the old route and again after the change
+ * (plus the grace period) is reported; this is how polling leaks in
+ * single-page apps show up. Confidence is medium because some app-wide calls
+ * legitimately span routes; requests covered by a polling policy are exempt.
+ */
+function detectRouteChangeLeaks(
+  requests: readonly CapturedRequest[],
+  histories: ReadonlyMap<string, TabHistory>,
+  config: DetectionRuleSet['navigation'],
+  exemptRequestIds: ReadonlySet<string>,
+): Finding[] {
+  const findings: Finding[] = [];
+  for (const [tabId, history] of histories) {
+    const tabRequests = requests.filter(
+      (request) => String(request.context.tabId) === tabId && !exemptRequestIds.has(request.id),
+    );
+    history.navigations.forEach((routeChange, index) => {
+      const routeStart = history.navigations[index - 1];
+      const documentId = routeChange.context.documentId;
+      // Top-level navigations always have a document id, so a missing previous
+      // navigation never matches.
+      if (routeStart?.context.documentId !== documentId) {
+        return;
+      }
+      const nextNavigation = history.navigations[index + 1]?.timestamp ?? Infinity;
+      const sameDocument = tabRequests.filter(
+        (request) => request.context.documentId === documentId,
+      );
+      const before = groupBy(
+        sameDocument.filter(
+          (request) =>
+            request.timestamp > routeStart.timestamp && request.timestamp <= routeChange.timestamp,
+        ),
+        (request) => request.fingerprint.endpoint,
+      );
+      const after = groupBy(
+        sameDocument.filter(
+          (request) =>
+            request.timestamp > routeChange.timestamp + config.graceMs &&
+            request.timestamp < nextNavigation,
+        ),
+        (request) => request.fingerprint.endpoint,
+      );
+      for (const [endpoint, earlier] of before) {
+        const later = after.get(endpoint) ?? [];
+        const first = later[0];
+        if (earlier.length < 2 || first === undefined) {
+          continue;
+        }
+        findings.push(
+          buildFinding({
+            type: 'request-after-navigation',
+            ruleId: 'request-after-navigation',
+            identity: `route|${tabId}|${documentId ?? '?'}|${routeChange.id}|${endpoint}`,
+            severity: 'medium',
+            confidence: 'medium',
+            title: `${first.method} calls continued after a route change`,
+            reasoning:
+              `This endpoint was called ${String(earlier.length)} times on the previous route and ` +
+              `${String(later.length)} more time(s) after the app changed route (grace period ` +
+              `${formatMs(config.graceMs)}). A timer or subscription probably outlived the view. ` +
+              'If the endpoint is meant to run on every route, give it a polling policy.',
+            endpoint,
+            evidence: evidenceFrom(later, {
+              routeChangedAt: routeChange.timestamp,
+              routeChangedTo: routeChange.url,
+              callsBefore: earlier.length,
+              callsAfter: later.length,
+              graceMs: config.graceMs,
+            }),
+          }),
+        );
+      }
+    });
+  }
+  return findings;
+}
+
+/**
  * Requests sent by a document after a newer top-level document replaced it in
  * the same tab, e.g. polling or timers that survived a navigation. Requests
  * without a known tab and document cannot be attributed and are skipped.
- * Same-document (history API) navigations are not document replacements.
+ * Same-document (history API) navigations are not document replacements;
+ * they are checked separately when `config.routeChanges` is on.
  */
 export function detectRequestsAfterNavigation(
   requests: readonly CapturedRequest[],
   navigations: readonly NavigationEvent[],
   config: DetectionRuleSet['navigation'],
+  exemptRequestIds: ReadonlySet<string> = new Set(),
 ): Finding[] {
   if (!config.enabled) {
     return [];
@@ -127,6 +210,9 @@ export function detectRequestsAfterNavigation(
         }),
       }),
     );
+  }
+  if (config.routeChanges) {
+    findings.push(...detectRouteChangeLeaks(requests, histories, config, exemptRequestIds));
   }
   return findings;
 }

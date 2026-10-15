@@ -70,6 +70,7 @@ export function analyzeRequests(
     analysed,
     input.navigations,
     ruleSet.navigation,
+    polling.polledRequestIds,
   );
   const endpointFindings = evaluateEndpointRules({
     requests: analysed,

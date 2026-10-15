@@ -79,6 +79,25 @@ importers:
         specifier: 8.3.4
         version: 8.3.4(@types/node@24.19.2)
 
+  apps/runner:
+    dependencies:
+      '@api-qa/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@api-qa/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@api-qa/reporting':
+        specifier: workspace:*
+        version: link:../../packages/reporting
+    devDependencies:
+      '@playwright/test':
+        specifier: 1.63.0
+        version: 1.63.0
+      '@types/node':
+        specifier: 24.19.2
+        version: 24.19.2
+
   packages/contracts:
     dependencies:
       zod:

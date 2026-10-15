@@ -119,6 +119,16 @@ Reports contain sanitised findings and endpoint statistics only, never the reque
 | CSV    | RFC 4180 quoting; cells starting with `= + - @ Tab CR` prefixed with `'` against formula injection |
 | JSON   | Validated against the report schema before writing                                                 |
 
+### The regression runner
+
+- **What is read.** CDP events for the test's own page. Only the Content-Type request header is
+  read, to classify bodies; no other header and no cookie is read.
+- **Redaction.** Captured traffic goes through the same normalisation and redaction as the
+  extension before it is analysed, stored in a baseline or reported. Scenario 12 plants four
+  secrets and checks every output.
+- **Artifacts.** Reports and JUnit files come from the local test app only, and are sanitised.
+  Baselines contain endpoint templates, counts and timings, never URLs with query values.
+
 ### Threat model
 
 | Threat                                            | Mitigation                                                                                       |

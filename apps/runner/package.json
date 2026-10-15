@@ -1,0 +1,21 @@
+{
+  "name": "@api-qa/runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Playwright regression runner for API QA Inspector.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@api-qa/contracts": "workspace:*",
+    "@api-qa/core": "workspace:*",
+    "@api-qa/reporting": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.19.2"
+  }
+}

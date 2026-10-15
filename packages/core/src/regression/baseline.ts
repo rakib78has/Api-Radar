@@ -128,7 +128,8 @@ function compareEndpoint(
     baselineP95 !== null &&
     currentP95 !== null &&
     baselineP95 > 0 &&
-    currentP95 > baselineP95 * (1 + tolerance.durationToleranceRatio)
+    currentP95 > baselineP95 * (1 + tolerance.durationToleranceRatio) &&
+    currentP95 - baselineP95 > tolerance.durationToleranceMs
   ) {
     findings.push(
       buildFinding({
@@ -150,6 +151,7 @@ function compareEndpoint(
           baselineP95Ms: baselineP95,
           currentP95Ms: currentP95,
           toleranceRatio: tolerance.durationToleranceRatio,
+          toleranceMs: tolerance.durationToleranceMs,
         }),
       }),
     );

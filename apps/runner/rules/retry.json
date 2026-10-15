@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "name": "Retry policy",
+  "description": "At most three attempts per operation, at least 100 ms apart.",
+  "retries": { "maxAttempts": 3, "minDelayMs": 100 }
+}

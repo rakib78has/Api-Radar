@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "name": "Single-page app",
+  "description": "Report calls that keep repeating after a history-API route change.",
+  "duplicates": { "windowMs": 50 },
+  "navigation": { "routeChanges": true }
+}

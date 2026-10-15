@@ -11,9 +11,9 @@ A QA tool that watches the API requests a web application makes and flags:
 It has two front ends on one shared analysis engine:
 
 1. A **Chrome extension** (Manifest V3) for manual testing. _Available._
-2. A **Playwright runner** for automated regression testing in CI. _Phase 4._
+2. A **Playwright runner** for automated regression testing in CI. _Available._
 
-> **Status: Phase 3 (Chrome extension) complete.** See [Roadmap](#roadmap).
+> **Status: Phase 4 (regression runner) complete.** See [Roadmap](#roadmap).
 
 ## What it detects
 
@@ -58,6 +58,36 @@ rule files are in [examples/test-rules](examples/test-rules).
 
 See [docs/security.md](docs/security.md).
 
+## Automated regression testing (Playwright runner)
+
+`apps/runner` runs browser workflows with Playwright. It records each page's traffic through the
+Chrome DevTools Protocol, then analyses it with the same engine and rules as the extension:
+
+```ts
+import { expectNoFindings, expectNoRegressions } from '../fixtures/assertions.js';
+import { test } from '../fixtures/api-qa.js';
+
+test.use({ rules: 'regression' }); // apps/runner/rules/regression.json
+
+test('checkout keeps its API budget', async ({ apiQa }) => {
+  await apiQa.start();
+  await apiQa.runScenario('/s/count?n=2'); // or drive any page with `page`
+  const result = await apiQa.stop();
+
+  expectNoFindings(result.analysis, 'medium'); // fails with a readable list of findings
+  const regression = apiQa.compare(result, 'cart-flow'); // apps/runner/baselines/cart-flow.json
+  await apiQa.report(result, regression); // JSON, HTML and CSV attached to the test result
+  expectNoRegressions(regression);
+});
+```
+
+- `pnpm test:regression` runs every scenario against the committed baselines. Results go to
+  `reports/runner/` (JUnit XML and an HTML report) and `test-results/runner/` (API QA reports).
+- `pnpm baselines:update` re-records the baselines from tests tagged `@baseline`. Review the JSON
+  diff before committing it.
+- The scenarios use a controlled local test application (`apps/runner/src/fixtures/test-app.ts`).
+  Playwright starts it automatically on `127.0.0.1:47130`.
+
 ## Requirements
 
 | Tool    | Version | Check              |
@@ -98,6 +128,9 @@ pnpm test:e2e   # the unpacked extension in Chromium
 | `pnpm test:security`     | Redaction canaries and hostile input                                               |
 | `pnpm test:coverage`     | All Vitest projects with coverage gates; HTML report in `coverage/`                |
 | `pnpm test:smoke`        | Extension smoke tests in Chromium (`@smoke`)                                       |
+| `pnpm test:runner`       | Runner logic: CDP assembler, sessions, baselines, reports                          |
+| `pnpm test:regression`   | The 14 regression scenarios in Chromium against committed baselines                |
+| `pnpm baselines:update`  | Re-record baselines from `@baseline` tests (review the diff!)                      |
 | `pnpm test:e2e`          | Builds the E2E extension, validates it, runs every Playwright test                 |
 | `pnpm build`             | Builds the packages (`tsc -b`) and the extension (Vite) to `dist/`                 |
 | `pnpm validate:manifest` | Checks permissions, CSP, referenced files and remote code in `apps/extension/dist` |
@@ -108,6 +141,7 @@ pnpm test:e2e   # the unpacked extension in Chromium
 ```
 apps/
   extension/      Manifest V3 extension: service worker, popup, dashboard (React)
+  runner/         Playwright regression runner: CDP capture, fixtures, scenarios, baselines
 packages/
   contracts/      types, Zod schemas, size limits, safe parsing
   core/           normalisation, redaction, fingerprints, detectors, baselines
@@ -129,17 +163,24 @@ the compiler, ESLint and an architecture test. See [docs/architecture.md](docs/a
 ## CI
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pull requests, pushes to `main` and
-manual dispatch. Two jobs run in parallel:
+manual dispatch. Three jobs run in parallel:
 
 - **verify:** every `pnpm check` gate.
-- **extension-e2e:** the Playwright suite in Chromium.
+- **extension-e2e:** the extension suite in Chromium.
+- **regression:** the runner scenarios against committed baselines, with JUnit and HTML reports
+  uploaded as artifacts.
 
 Actions are pinned to commit SHAs. See [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Environment variables
 
-None. No `.env` file is needed. `CI=true`, set by GitHub Actions, makes Playwright forbid
-`test.only` and write an HTML report.
+No `.env` file is needed.
+
+| Variable               | Used by         | Effect                                                                                                               |
+| ---------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `CI`                   | Playwright      | `true` (set by GitHub Actions) forbids `test.only` and writes HTML reports                                           |
+| `UPDATE_BASELINES`     | Runner          | `1` makes `apiQa.compare()` record the baseline instead of comparing. Set by `pnpm baselines:update`                 |
+| `API_QA_TEST_APP_PORT` | Runner test app | Port of the controlled test app (default `47130`). Baselines contain the origin, so re-record them after changing it |
 
 ## Known limitations
 
@@ -162,8 +203,8 @@ The [detection rules](docs/detection-rules.md#known-limitations) and
 | 1     | Monorepo, strict TS, ESLint, Prettier, Vitest, CI                     | Complete |
 | 2     | Contracts and analysis engine: normalisation, fingerprints, detection | Complete |
 | 3     | Chrome extension: capture, messaging, UI, storage, export             | Complete |
-| 4     | Playwright runner, controlled test app, baselines                     | Next     |
-| 5     | Security pipeline, release packaging                                  | Planned  |
+| 4     | Playwright runner, controlled test app, baselines                     | Complete |
+| 5     | Security pipeline, release packaging                                  | Next     |
 
 ## Troubleshooting
 
@@ -175,6 +216,10 @@ The [detection rules](docs/detection-rules.md#known-limitations) and
 - **`ERR_PNPM_UNSUPPORTED_ENGINE`:** switch to Node.js 24 (`nvm use`) and pnpm 10.34.x.
 - **`pnpm format:check` fails on Windows only:** line endings. The repo enforces LF through
   `.gitattributes`. Run `pnpm format`.
+- **`Test app could not listen on port 47130`:** another process uses the port. Stop it, or set
+  `API_QA_TEST_APP_PORT` and run `pnpm baselines:update`.
+- **A baseline comparison fails after an intended change:** run `pnpm baselines:update`, review the
+  JSON diff, and commit it with the change.
 - **Playwright cannot find a browser:** run `pnpm exec playwright install chromium`.
 - **`Build the E2E extension first`:** run `pnpm --filter @api-qa/extension build:e2e`, or use
   `pnpm test:e2e`, which builds it.

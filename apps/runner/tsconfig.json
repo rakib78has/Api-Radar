@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Runner code runs in Node.js under Playwright; page.evaluate callbacks need DOM types.",
+  "extends": "../../tsconfig.workspace.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "allowImportingTsExtensions": true
+  },
+  "include": ["src", "tests", "playwright.config.ts"]
+}

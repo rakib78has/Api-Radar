@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "name": "Duplicated",
+  "createdAt": 0,
+  "ruleSetName": "Default",
+  "endpoints": [
+    {
+      "endpoint": "GET http://127.0.0.1:47130/api/cart",
+      "requestCount": 2,
+      "failureCount": 0,
+      "timedRequestCount": 0,
+      "durationP50Ms": null,
+      "durationP95Ms": null
+    },
+    {
+      "endpoint": "GET http://127.0.0.1:47130/api/cart",
+      "requestCount": 3,
+      "failureCount": 4,
+      "timedRequestCount": 0,
+      "durationP50Ms": null,
+      "durationP95Ms": null
+    }
+  ],
+  "findingKeys": []
+}
