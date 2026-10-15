@@ -41,6 +41,10 @@ export default defineConfig({
         extends: true,
         test: { name: 'security', include: ['tests/security/**/*.test.ts'] },
       },
+      {
+        extends: true,
+        test: { name: 'tooling', include: ['tests/tooling/**/*.test.ts'] },
+      },
     ],
     coverage: {
       provider: 'v8',
@@ -70,6 +74,7 @@ export default defineConfig({
         'packages/reporting/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
         'apps/extension/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
         'apps/runner/src/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
+        'scripts/lib/**': { statements: 80, branches: 80, functions: 80, lines: 80 },
       },
     },
   },

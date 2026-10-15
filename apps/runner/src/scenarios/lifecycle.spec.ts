@@ -23,11 +23,14 @@ test.describe('13. capture lifecycle', () => {
   }) => {
     await page.goto(`${TEST_APP_ORIGIN}/s/idle`);
     await apiQa.start();
+    // Wait for the request itself rather than a fixed delay; the server holds it for 3 s.
+    const started = page.waitForRequest(
+      (request) => new URL(request.url()).pathname === '/api/slow',
+    );
     await page.evaluate(() => {
       void fetch('/api/slow?ms=3000');
     });
-    // Give the request time to start; the server holds it for 3 s.
-    await page.waitForTimeout(300);
+    await started;
     const { session } = await apiQa.stop({ settleMs: 100 });
 
     expect(session.requests).toHaveLength(1);

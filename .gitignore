@@ -6,6 +6,9 @@ dist/
 dist-e2e/
 *.tsbuildinfo
 
+# Release artifacts (built by pnpm package:extension)
+release/
+
 # Test and coverage output
 coverage/
 test-results/

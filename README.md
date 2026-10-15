@@ -13,7 +13,8 @@ It has two front ends on one shared analysis engine:
 1. A **Chrome extension** (Manifest V3) for manual testing. _Available._
 2. A **Playwright runner** for automated regression testing in CI. _Available._
 
-> **Status: Phase 4 (regression runner) complete.** See [Roadmap](#roadmap).
+> **Status: version 0.1.0. All five phases are complete.** See [Roadmap](#roadmap) and the
+> [changelog](CHANGELOG.md).
 
 ## What it detects
 
@@ -133,6 +134,15 @@ pnpm test:e2e   # the unpacked extension in Chromium
 | `pnpm baselines:update`  | Re-record baselines from `@baseline` tests (review the diff!)                      |
 | `pnpm test:e2e`          | Builds the E2E extension, validates it, runs every Playwright test                 |
 | `pnpm build`             | Builds the packages (`tsc -b`) and the extension (Vite) to `dist/`                 |
+| `pnpm security`          | Secret scan, lockfile policy, dependency audit, security and fuzz tests            |
+| `pnpm security:secrets`  | Scan tracked files for credential-shaped strings                                   |
+| `pnpm security:lockfile` | Enforce registry, integrity hashes and workspace links in the lockfile             |
+| `pnpm security:audit`    | `pnpm audit`, failing on high or critical vulnerabilities                          |
+| `pnpm test:tooling`      | Tests for the release and security tooling                                         |
+| `pnpm icons`             | Regenerate the extension icons (`pnpm icons:check` verifies them)                  |
+| `pnpm package:extension` | Build, validate and zip the extension into `release/`, with checksums              |
+| `pnpm test:package`      | Package, then load the release zip in Chromium                                     |
+| `pnpm release:check`     | Check a tag against the package versions and CHANGELOG.md                          |
 | `pnpm validate:manifest` | Checks permissions, CSP, referenced files and remote code in `apps/extension/dist` |
 | `pnpm clean`             | Remove package build output                                                        |
 
@@ -163,14 +173,45 @@ the compiler, ESLint and an architecture test. See [docs/architecture.md](docs/a
 ## CI
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on pull requests, pushes to `main` and
-manual dispatch. Three jobs run in parallel:
+manual dispatch. Its jobs run in parallel:
 
 - **verify:** every `pnpm check` gate.
 - **extension-e2e:** the extension suite in Chromium.
 - **regression:** the runner scenarios against committed baselines, with JUnit and HTML reports
   uploaded as artifacts.
+- **security:** secret scan, lockfile policy, dependency audit, and the security and fuzz tests.
+- **dependency-review** (pull requests only): blocks new vulnerable or unapproved-licence
+  dependencies.
+
+[CodeQL](.github/workflows/codeql.yml) runs static analysis on every change and weekly. The
+[release workflow](.github/workflows/release.yml) runs on version tags.
 
 Actions are pinned to commit SHAs. See [docs/ci-cd.md](docs/ci-cd.md).
+
+## Releasing
+
+1. Update `version` in `package.json` and `apps/extension/package.json`.
+2. Move the `[Unreleased]` notes in `CHANGELOG.md` into a `## [x.y.z] - YYYY-MM-DD` section.
+3. Run `pnpm release:check vX.Y.Z`.
+4. Merge, then push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+5. The [release workflow](.github/workflows/release.yml) re-runs every gate on the tagged commit,
+   then waits for approval in the `release` environment. Once approved, it creates a **draft**
+   GitHub release with:
+   - the zip;
+   - a per-file checksum list;
+   - `SHA256SUMS`;
+   - a build-provenance attestation.
+6. Review the draft. Verify the zip with `sha256sum --check SHA256SUMS` and
+   `gh attestation verify <zip> --repo rakib78has/Api-Radar`. Then publish the draft and upload
+   the zip to the Chrome Web Store by hand.
+
+Packaging is reproducible: the same commit produces a byte-identical zip on any machine.
+
+## Security
+
+- **Reporting:** see [SECURITY.md](SECURITY.md).
+- **Design:** the privacy model, threat model and supply-chain controls are in
+  [docs/security.md](docs/security.md).
 
 ## Environment variables
 
@@ -180,6 +221,7 @@ No `.env` file is needed.
 | ---------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `CI`                   | Playwright      | `true` (set by GitHub Actions) forbids `test.only` and writes HTML reports                                           |
 | `UPDATE_BASELINES`     | Runner          | `1` makes `apiQa.compare()` record the baseline instead of comparing. Set by `pnpm baselines:update`                 |
+| `API_QA_PACKAGE_TEST`  | Playwright      | `1` includes the `@package` test (set by `pnpm test:package`)                                                        |
 | `API_QA_TEST_APP_PORT` | Runner test app | Port of the controlled test app (default `47130`). Baselines contain the origin, so re-record them after changing it |
 
 ## Known limitations
@@ -204,7 +246,7 @@ The [detection rules](docs/detection-rules.md#known-limitations) and
 | 2     | Contracts and analysis engine: normalisation, fingerprints, detection | Complete |
 | 3     | Chrome extension: capture, messaging, UI, storage, export             | Complete |
 | 4     | Playwright runner, controlled test app, baselines                     | Complete |
-| 5     | Security pipeline, release packaging                                  | Next     |
+| 5     | Security pipeline, release packaging                                  | Complete |
 
 ## Troubleshooting
 

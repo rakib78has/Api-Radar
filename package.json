@@ -1,6 +1,6 @@
 {
   "name": "api-qa-inspector",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Chrome extension and Playwright runner that detect duplicate, unexpected and regressed API calls.",
   "license": "UNLICENSED",
@@ -30,8 +30,18 @@
     "baselines:update": "tsc -b tsconfig.build.json && UPDATE_BASELINES=1 playwright test -c apps/runner/playwright.config.ts --grep @baseline",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build && pnpm validate:manifest",
-    "validate:manifest": "pnpm --filter @api-qa/extension validate:manifest"
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm icons:check && pnpm test:coverage && pnpm build && pnpm validate:manifest",
+    "validate:manifest": "pnpm --filter @api-qa/extension validate:manifest",
+    "test:tooling": "vitest run --project tooling",
+    "icons": "node scripts/generate-icons.ts",
+    "icons:check": "node scripts/generate-icons.ts --check",
+    "security:secrets": "node scripts/scan-secrets.ts",
+    "security:lockfile": "node scripts/check-lockfile.ts",
+    "security:audit": "pnpm audit --audit-level=high",
+    "security": "pnpm security:secrets && pnpm security:lockfile && pnpm security:audit && pnpm test:security",
+    "release:check": "node scripts/check-release.ts",
+    "package:extension": "pnpm build && pnpm validate:manifest && node scripts/package-extension.ts",
+    "test:package": "pnpm package:extension && API_QA_PACKAGE_TEST=1 playwright test --grep @package"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

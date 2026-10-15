@@ -39,7 +39,8 @@ export default defineConfig(({ mode }) => {
   return {
     root: fromHere('src'),
     base: './',
-    publicDir: false,
+    // Copied as-is: the generated icons (pnpm icons).
+    publicDir: fromHere('public'),
     plugins: [manifestPlugin(e2e)],
     oxc: { jsx: { runtime: 'automatic' } },
     build: {

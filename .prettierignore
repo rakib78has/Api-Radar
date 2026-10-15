@@ -7,3 +7,4 @@ apps/runner/baselines/invalid/not-json.json
 reports/
 test-results/
 playwright-report/
+release/

@@ -19,6 +19,7 @@ const manifestSchema = z.object({
   action: z.strictObject({
     default_title: z.string().min(1),
     default_popup: z.string().min(1),
+    default_icon: z.record(z.string(), z.string()).optional(),
   }),
   background: z.strictObject({
     service_worker: z.string().min(1),
@@ -120,6 +121,7 @@ export function validateManifest(input: unknown, options: ManifestPolicyOptions)
     manifest.background.service_worker,
     manifest.action.default_popup,
     ...Object.values(manifest.icons ?? {}),
+    ...Object.values(manifest.action.default_icon ?? {}),
   ];
   for (const file of referenced) {
     if (!options.files.has(file)) {

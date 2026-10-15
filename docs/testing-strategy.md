@@ -2,17 +2,19 @@
 
 ## Test layers
 
-| Layer           | Tool            | Location                    | Command                  | Status                  |
-| --------------- | --------------- | --------------------------- | ------------------------ | ----------------------- |
-| Unit            | Vitest          | `packages/*/tests`          | `pnpm test:unit`         | Active                  |
-| Architecture    | Vitest          | `tests/architecture`        | `pnpm test:architecture` | Active                  |
-| Extension logic | Vitest          | `apps/extension/tests`      | `pnpm test:extension`    | Active                  |
-| Integration     | Vitest          | `tests/integration`         | `pnpm test:integration`  | Active                  |
-| Security        | Vitest          | `tests/security`            | `pnpm test:security`     | Active; more in Phase 5 |
-| Extension E2E   | Playwright Test | `tests/e2e`                 | `pnpm test:e2e`          | Active                  |
-| Extension smoke | Playwright Test | `tests/e2e` (`@smoke`)      | `pnpm test:smoke`        | Active                  |
-| Runner logic    | Vitest          | `apps/runner/tests`         | `pnpm test:runner`       | Active                  |
-| Regression E2E  | Playwright Test | `apps/runner/src/scenarios` | `pnpm test:regression`   | Active                  |
+| Layer           | Tool            | Location                    | Command                  | Status |
+| --------------- | --------------- | --------------------------- | ------------------------ | ------ |
+| Unit            | Vitest          | `packages/*/tests`          | `pnpm test:unit`         | Active |
+| Architecture    | Vitest          | `tests/architecture`        | `pnpm test:architecture` | Active |
+| Extension logic | Vitest          | `apps/extension/tests`      | `pnpm test:extension`    | Active |
+| Integration     | Vitest          | `tests/integration`         | `pnpm test:integration`  | Active |
+| Security        | Vitest          | `tests/security`            | `pnpm test:security`     | Active |
+| Tooling         | Vitest          | `tests/tooling`             | `pnpm test:tooling`      | Active |
+| Package smoke   | Playwright Test | `tests/e2e/package.spec.ts` | `pnpm test:package`      | Active |
+| Extension E2E   | Playwright Test | `tests/e2e`                 | `pnpm test:e2e`          | Active |
+| Extension smoke | Playwright Test | `tests/e2e` (`@smoke`)      | `pnpm test:smoke`        | Active |
+| Runner logic    | Vitest          | `apps/runner/tests`         | `pnpm test:runner`       | Active |
+| Regression E2E  | Playwright Test | `apps/runner/src/scenarios` | `pnpm test:regression`   | Active |
 
 `pnpm test` runs every Vitest project. `pnpm test:coverage` also applies the coverage gates.
 
@@ -20,14 +22,15 @@
 
 Gates are enforced per directory in `vitest.config.ts`, and a run fails below them:
 
-| Scope                           | Statements | Branches | Functions | Lines |
-| ------------------------------- | ---------- | -------- | --------- | ----- |
-| `packages/core/src/**`          | 90%        | 90%      | 90%       | 90%   |
-| `packages/contracts/src/**`     | 80%        | 80%      | 80%       | 80%   |
-| `packages/storage/src/**`       | 80%        | 80%      | 80%       | 80%   |
-| `packages/reporting/src/**`     | 80%        | 80%      | 80%       | 80%   |
-| `apps/extension/src/**` (logic) | 80%        | 80%      | 80%       | 80%   |
-| `apps/runner/src/**` (logic)    | 80%        | 80%      | 80%       | 80%   |
+| Scope                                           | Statements | Branches | Functions | Lines |
+| ----------------------------------------------- | ---------- | -------- | --------- | ----- |
+| `packages/core/src/**`                          | 90%        | 90%      | 90%       | 90%   |
+| `packages/contracts/src/**`                     | 80%        | 80%      | 80%       | 80%   |
+| `packages/storage/src/**`                       | 80%        | 80%      | 80%       | 80%   |
+| `packages/reporting/src/**`                     | 80%        | 80%      | 80%       | 80%   |
+| `apps/extension/src/**` (logic)                 | 80%        | 80%      | 80%       | 80%   |
+| `apps/runner/src/**` (logic)                    | 80%        | 80%      | 80%       | 80%   |
+| `scripts/lib/**` (release and security tooling) | 80%        | 80%      | 80%       | 80%   |
 
 Coverage counts every matching source file, not only files a test imports.
 
@@ -107,6 +110,35 @@ Everything after the grant (capture, storage, UI) is the production code path.
 
 The pure capture logic (`cdp-assembler.ts`), session building, the baseline store, the assertions
 and the report writer are also unit-tested with Vitest (`pnpm test:runner`, 80% gate).
+
+## Security, tooling and package tests
+
+- **Fuzzing** (`tests/security/fuzz.test.ts`, seeded, deterministic):
+  - 1,500 random JSON-like values and strings per untrusted-input parser, including
+    `__proto__` keys, NaN, Infinity and lone surrogates. Parsers must never throw, must cap their
+    issues, and must never pollute `Object.prototype`.
+  - 2,000 random requests through `normalizeRequest`. Every accepted one must be schema-valid.
+  - Random endpoint patterns and paths, and analysis of random sessions.
+- **Report leakage:** the 12 redaction canaries are also checked in the JSON, HTML and both CSV
+  exports.
+- **Tooling** (`tests/tooling`):
+  - The zip writer is round-tripped through a CRC-verifying reader, checked for determinism, and
+    must reject path traversal.
+  - The PNG encoder is decoded back pixel by pixel.
+  - Icons are checked for transparent corners and determinism.
+  - The secret scanner is run against every token shape, built at runtime.
+  - The lockfile policy is run against the real lockfile and against tampered copies.
+  - The release checks cover tag validation (including injection attempts) and changelog
+    extraction.
+- **Package smoke** (`pnpm test:package`): builds the release zip, unpacks it with the project's
+  own reader, and loads it in Chromium with the production manifest. It checks that:
+  - the service worker starts;
+  - the popup renders;
+  - the icons are served;
+  - capture is refused without a host grant.
+
+  The zip was also extracted with Windows' `Expand-Archive`, and all 14 per-file SHA-256 values
+  matched.
 
 ## Not covered automatically
 

@@ -1,8 +1,8 @@
 # Security and privacy
 
-> **Scope (Phase 3).** This covers the shared engine, storage, reports and the Chrome extension.
-> Release and supply-chain controls (dependency audit, secret scanning, signed artifacts) are
-> added in Phase 5.
+> **Scope.** This covers the shared engine, storage, reports, the Chrome extension, the
+> regression runner, and the build and release supply chain. To report a vulnerability, see
+> [SECURITY.md](../SECURITY.md).
 
 ## Principles
 
@@ -143,12 +143,51 @@ Reports contain sanitised findings and endpoint statistics only, never the reque
 | Over-broad access                                 | Optional per-origin hosts, revocable from the dashboard                                          |
 | Supply chain                                      | Exact pinned versions, frozen lockfile, SHA-pinned actions. Audit and scanning follow in Phase 5 |
 
+## Supply chain
+
+| Control                                             | Where                                                                                                                               |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Exact versions, committed lockfile, frozen installs | `package.json`, `pnpm-lock.yaml`, every CI job                                                                                      |
+| No dependency install scripts                       | `strictDepBuilds: true` (pnpm-workspace.yaml); no package in the tree needs one today                                               |
+| No freshly published versions                       | `minimumReleaseAge: 4320`: pnpm will not resolve a version published less than 3 days ago                                           |
+| Registry and integrity policy                       | `pnpm security:lockfile`: npm registry only, sha512 for every package, workspace links inside the repo                              |
+| Known vulnerabilities                               | `pnpm security:audit` (CI), Dependency Review (pull requests), Dependabot alerts (repository setting)                               |
+| Licences                                            | Dependency Review allowlist                                                                                                         |
+| Committed secrets                                   | `pnpm security:secrets` (CI); GitHub secret scanning and push protection (repository setting)                                       |
+| Static analysis                                     | CodeQL `security-extended`                                                                                                          |
+| CI actions                                          | Pinned to full commit SHAs; least-privilege `permissions`; `persist-credentials: false`                                             |
+| Release integrity                                   | Reproducible zip, `SHA256SUMS`, per-file checksums, build-provenance attestation, draft-only release behind an approval environment |
+
+The secret scanner looks for well-known token formats (AWS, GitHub, GitLab, Slack, Stripe, Google,
+npm, private keys, JWTs). It also flags random-looking values assigned to credential names, and
+masks matches in its output. A deliberate fake can be marked on its line with
+`secret-scan: allow`; the repository uses none today. The test suite builds every token shape at
+runtime, so the test file contains no secret itself.
+
+### ADR-020: Fingerprints stay on FNV-1a
+
+Phase 2 deferred the choice between FNV-1a 64 and SHA-256 for request fingerprints. **Decision:
+keep FNV-1a.**
+
+- **Only sanitised data is hashed.** Sensitive values are removed before hashing, so a preimage
+  attack would recover redacted text at best.
+- **Hashes never leave the device unless a tester exports a report,** and reports carry finding
+  ids, not request fingerprints.
+- **SHA-256 would make the engine asynchronous.** WebCrypto is asynchronous, and the engine is a
+  synchronous pure function in both runtimes. That would be a large cost for no gain under the
+  model above.
+
+The residual risk below stays documented.
+
 ## Residual risks
 
-- **Fingerprints use FNV-1a 64, which is not cryptographic.** The engine therefore hashes only
-  sanitised data. A body hash still covers non-sensitive fields such as a username. Someone with
-  the report who can guess every other field of a body could confirm a guess. Phase 5 will decide
-  whether to switch to SHA-256 (asynchronous WebCrypto).
+- **Fingerprints use FNV-1a 64, which is not cryptographic** (ADR-020). Only sanitised data is
+  hashed. A body hash still covers non-sensitive fields such as a username, so someone holding a
+  stored session who can guess every other field of a body could confirm a guess.
+- **The secret scanner is pattern-based.** It cannot find a secret in an unknown format. GitHub
+  secret scanning and push protection are the second line of defence.
+- **`pnpm audit` depends on the advisory database,** so a vulnerability that has not been
+  disclosed yet is not caught.
 - **Plain-text bodies (neither JSON nor form) are hashed without redaction.** They are never
   stored, but the hash covers their full text.
 - **Name-based redaction cannot catch a secret under an innocent name** (for example

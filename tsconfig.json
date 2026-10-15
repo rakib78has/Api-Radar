@@ -10,8 +10,9 @@
       "@api-qa/core": ["./packages/core/src/index.ts"],
       "@api-qa/storage": ["./packages/storage/src/index.ts"],
       "@api-qa/reporting": ["./packages/reporting/src/index.ts"]
-    }
+    },
+    "allowImportingTsExtensions": true
   },
-  "include": ["*.ts", "tests/**/*.ts"],
+  "include": ["*.ts", "tests/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["tests/e2e"]
 }
