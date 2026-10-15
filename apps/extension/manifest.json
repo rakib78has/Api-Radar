@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "API QA Inspector",
+  "version": "0.0.0",
+  "description": "Find duplicate, unexpected and excessive API calls on any web page. All data stays on your device.",
+  "minimum_chrome_version": "116",
+  "action": {
+    "default_title": "API QA Inspector",
+    "default_popup": "popup/index.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["activeTab", "storage", "webNavigation", "webRequest"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+  }
+}

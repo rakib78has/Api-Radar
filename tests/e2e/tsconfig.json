@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Playwright specs: Node.js for the runner, DOM and Chrome types for code evaluated in pages.",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "types": ["node", "chrome"]
+  },
+  "include": ["**/*.ts"],
+  "exclude": []
+}

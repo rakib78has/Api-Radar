@@ -5,18 +5,19 @@ runner (automated regression testing) share one analysis engine.
 
 ## Workspace layout
 
-| Path                  | Status (Phase 2)               | Responsibility                                                   |
-| --------------------- | ------------------------------ | ---------------------------------------------------------------- |
-| `packages/contracts`  | Implemented                    | Types, Zod runtime schemas, size limits, safe parsing            |
-| `packages/core`       | Implemented                    | Normalisation, redaction, fingerprints, detectors A–E, baselines |
-| `packages/storage`    | Not created yet (Phase 3)      | Persistence adapters, session lifecycle and retention            |
-| `packages/reporting`  | Not created yet (Phase 3 to 5) | Sanitised JSON, CSV and HTML reports                             |
-| `apps/extension`      | Not created yet (Phase 3)      | MV3 capture, messaging, React UI                                 |
-| `apps/runner`         | Not created yet (Phase 4)      | Playwright fixtures, scenarios, baseline comparison              |
-| `tests/architecture`  | Active                         | Repository-wide rules, such as package import boundaries         |
-| `tests/integration`   | Active                         | Full pipeline across packages; example rule files                |
-| `tests/security`      | Active                         | Redaction canaries, hostile rule files                           |
-| `examples/test-rules` | Active                         | Example rule sets, validated by the integration suite            |
+| Path                  | Status (Phase 3)          | Responsibility                                                       |
+| --------------------- | ------------------------- | -------------------------------------------------------------------- |
+| `packages/contracts`  | Implemented               | Types, Zod runtime schemas, size limits, safe parsing                |
+| `packages/core`       | Implemented               | Normalisation, redaction, fingerprints, detectors A–E, baselines     |
+| `packages/storage`    | Implemented               | Validated, chunked session store; settings; retention                |
+| `packages/reporting`  | Implemented               | Sanitised JSON, CSV (injection-safe) and HTML (escaped, CSP) reports |
+| `apps/extension`      | Implemented               | MV3 capture (webRequest), messaging, popup and dashboard (React)     |
+| `apps/runner`         | Not created yet (Phase 4) | Playwright fixtures, scenarios, baseline comparison                  |
+| `tests/architecture`  | Active                    | Repository-wide rules, such as package import boundaries             |
+| `tests/integration`   | Active                    | Full pipeline across packages; example rule files                    |
+| `tests/security`      | Active                    | Redaction canaries, hostile rule files                               |
+| `tests/e2e`           | Active                    | The unpacked extension in Chromium, against a local test server      |
+| `examples/test-rules` | Active                    | Example rule sets, validated by the integration suite                |
 
 ### Inside `@api-qa/core`
 
@@ -131,3 +132,101 @@ optional, so serialised sessions always have the same shape.
 values, and a hash of the redacted body. FNV-1a is not a cryptographic hash, so this ensures a
 fingerprint never encodes a secret. The cost: two requests that differ only in a redacted value are
 treated as equivalent. See the residual risks in [security.md](security.md).
+
+## The Chrome extension (`apps/extension`)
+
+```
+ web page tab                service worker (background.js)                 extension pages
+ ────────────               ───────────────────────────────                ───────────────
+ fetch/XHR ──webRequest──►  RequestTracker ─► CaptureController            popup/   dashboard (panel/)
+ navigation ─webNavigation─►   (one queue)       │ normalizeRequest           │            │
+                                                 ▼ (redaction)                │  read-only │
+                                          SessionRepository ──► chrome.storage.local ◄──────┘
+                                                 ▲                            │
+                            handleMessage ◄──────┴── validated commands ◄─────┘ (sendCommand)
+```
+
+| Folder        | Contents                                                                                                   |
+| ------------- | ---------------------------------------------------------------------------------------------------------- |
+| `background/` | `service-worker.ts` (listener wiring), `request-tracker.ts`, `capture-controller.ts`, `message-handler.ts` |
+| `shared/`     | Message and state schemas, sender check, origin helpers, chrome.storage adapter, command client            |
+| `popup/`      | Start and stop capture, site-access status                                                                 |
+| `panel/`      | Dashboard: sessions, findings, requests, rules, permissions and limits, export                             |
+| `ui/`         | Pure filter and grouping helpers, styles                                                                   |
+| `scripts/`    | Manifest policy and validator (Node.js)                                                                    |
+
+Analysis runs in the dashboard: it is a pure function of the stored session and rule set, so
+findings always reflect the current rules.
+
+### ADR-009: Capture with `chrome.webRequest`; DevTools panel evaluated and deferred
+
+| API                                       | Gives                                                                                                                                       | Missing or costs                                                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `chrome.webRequest` (observe)             | Every request in a tab, while DevTools is closed. Tab, frame, documentId, initiator, status, error, timestamps, form and raw request bodies | Response bodies, the Content-Type header (without `extraHeaders`), and the distinction between fetch and XHR |
+| `chrome.devtools.network`                 | HAR entries with bodies and precise timings                                                                                                 | Works only while DevTools is open on that tab                                                                |
+| Page instrumentation (patching fetch/XHR) | Everything the page sees                                                                                                                    | Invasive, CSP-dependent, can change page behaviour                                                           |
+
+`webRequest` covers every rule in Phase 2 without invasive instrumentation, and it works while a
+tester uses the site normally. A DevTools panel that feeds HAR entries in as the
+`extension-devtools` capture source is a possible later addition. The `devtools/` folder from the
+original plan is therefore not created.
+
+### ADR-010: The service worker is the only writer
+
+Pages read `chrome.storage.local` directly but send every change to the service worker as a
+validated command: triage, delete, clear, and saving rules. Repository operations are serialised
+per instance. Two writers in different contexts could interleave read-modify-write updates, for
+example a dashboard triage write racing a request append, and corrupt a session's chunk count.
+`CaptureController.exclusive` runs those mutations in the same queue as capture events, after
+flushing buffered requests.
+
+### ADR-011: Host access is optional, per origin, and requested at capture time
+
+The manifest declares no `host_permissions`. Instead:
+
+- `optional_host_permissions` lists `http://*/*` and `https://*/*`.
+- The popup requests access only for the captured origins, inside the click handler, because
+  Chrome requires a user gesture.
+- The worker re-checks the grant with `chrome.permissions.contains` before it starts.
+- The dashboard lists the grants and can revoke them.
+
+The E2E build alone pre-grants `http://127.0.0.1/*`, because automated browsers cannot click the
+prompt. `scripts/manifest-policy.ts` fails any other difference.
+
+### ADR-012: Surviving service-worker suspension
+
+- **Listeners:** registered synchronously at the top level, so an event that wakes the worker is
+  delivered.
+- **Capture state:** `{ sessionId, tabId, origins }` lives in `chrome.storage.session`. The
+  controller loads it before handling any event.
+- **In-flight requests:** kept in memory only. If the worker restarts mid-request, the completion
+  still produces a record, with the body and duration marked unavailable instead of guessed.
+- **Writes:** buffered for at most 250 ms or 50 requests.
+- **Browser restarts:** these clear session storage, which ends the capture. The recorded session
+  is kept.
+
+### ADR-013: Sessions are stored in chunks
+
+A session is stored as several `chrome.storage.local` keys:
+
+- an index;
+- one metadata record;
+- requests in chunks of 250.
+
+An append rewrites the last chunk and the metadata, never the whole session. Every read is
+validated against the contract schemas, and a corrupt chunk is reported rather than trusted.
+
+### ADR-014: No React Vite plugin
+
+Vite 8 compiles TSX with Oxc and the automatic JSX runtime. `@vitejs/plugin-react` mainly adds hot
+reload, which an extension production build does not use, so it is not a dependency.
+
+### Deviations from the planned layout
+
+| Planned                           | Actual                                           | Why                                                |
+| --------------------------------- | ------------------------------------------------ | -------------------------------------------------- |
+| `apps/extension/src/devtools/`    | Not created                                      | ADR-009                                            |
+| `apps/extension/src/permissions/` | `shared/origins.ts` and the popup                | Too small for its own module                       |
+| `apps/extension/src/storage/`     | `packages/storage` plus `shared/chrome-store.ts` | Shared with the runner (Phase 4)                   |
+| `apps/extension/src/content/`     | Not created                                      | No content scripts; nothing is injected into pages |
+| `apps/extension/public/`          | Not needed                                       | The manifest is emitted by the build               |

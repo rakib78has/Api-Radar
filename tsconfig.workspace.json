@@ -6,7 +6,9 @@
     "noEmit": true,
     "paths": {
       "@api-qa/contracts": ["${configDir}/../../packages/contracts/src/index.ts"],
-      "@api-qa/core": ["${configDir}/../../packages/core/src/index.ts"]
+      "@api-qa/core": ["${configDir}/../../packages/core/src/index.ts"],
+      "@api-qa/storage": ["${configDir}/../../packages/storage/src/index.ts"],
+      "@api-qa/reporting": ["${configDir}/../../packages/reporting/src/index.ts"]
     }
   }
 }

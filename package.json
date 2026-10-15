@@ -11,23 +11,29 @@
     "pnpm": ">=10.34.0 <11"
   },
   "scripts": {
-    "build": "tsc -b tsconfig.build.json",
+    "build": "tsc -b tsconfig.build.json && pnpm --filter @api-qa/extension build",
     "clean": "tsc -b tsconfig.build.json --clean",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc -p tsconfig.json && pnpm -r typecheck",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tests/e2e/tsconfig.json && pnpm -r typecheck",
     "test": "vitest run",
     "test:unit": "vitest run --project unit",
     "test:architecture": "vitest run --project architecture",
+    "test:extension": "vitest run --project extension",
     "test:integration": "vitest run --project integration",
     "test:security": "vitest run --project security",
+    "test:e2e": "pnpm build && pnpm --filter @api-qa/extension build:e2e && pnpm --filter @api-qa/extension validate:manifest:e2e && playwright test",
+    "test:smoke": "pnpm build && pnpm --filter @api-qa/extension build:e2e && playwright test --grep @smoke",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build"
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build && pnpm validate:manifest",
+    "validate:manifest": "pnpm --filter @api-qa/extension validate:manifest"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
+    "@types/chrome": "0.3.4",
     "@types/node": "^24.19.2",
     "@vitest/coverage-v8": "5.0.3",
     "eslint": "10.12.0",

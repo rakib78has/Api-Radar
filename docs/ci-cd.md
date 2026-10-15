@@ -9,19 +9,32 @@
 **Concurrency:** a newer run cancels an older run on the same pull request. Runs on `main` are
 never cancelled.
 
-| Step               | Command                           | Fails when                                |
-| ------------------ | --------------------------------- | ----------------------------------------- |
-| Install            | `pnpm install --frozen-lockfile`  | The lockfile is out of date               |
-| Formatting         | `pnpm format:check`               | Any file differs from Prettier output     |
-| Lint               | `pnpm lint`                       | Any error, or any warning                 |
-| Type-check         | `pnpm typecheck`                  | Root or any workspace fails `tsc`         |
-| Tests and coverage | `pnpm test:coverage` (all suites) | A test fails or a coverage gate is missed |
-| Build              | `pnpm build`                      | `tsc -b` fails                            |
-| Coverage artifact  | `upload-artifact`                 | Never; it uploads even after failures     |
+Two jobs run in parallel. Each job installs from the frozen lockfile.
 
-Phase 1 uses a single job because the whole run takes seconds. Later phases will split out
-parallel jobs where they save time: Playwright browser tests, extension smoke tests, manifest
-validation and a security job.
+### Job `verify`
+
+| Step               | Command                                    | Fails when                                                     |
+| ------------------ | ------------------------------------------ | -------------------------------------------------------------- |
+| Install            | `pnpm install --frozen-lockfile`           | The lockfile is out of date                                    |
+| Formatting         | `pnpm format:check`                        | Any file differs from Prettier output                          |
+| Lint               | `pnpm lint`                                | Any error, or any warning                                      |
+| Type-check         | `pnpm typecheck`                           | Root, Playwright specs or any workspace fails `tsc`            |
+| Tests and coverage | `pnpm test:coverage` (all Vitest projects) | A test fails or a coverage gate is missed                      |
+| Build              | `pnpm build`                               | `tsc -b` or the Vite extension build fails                     |
+| Manifest           | `pnpm validate:manifest`                   | Permissions, CSP, referenced files or remote code break policy |
+| Coverage artifact  | `upload-artifact`                          | Never; it uploads even after failures                          |
+
+### Job `extension-e2e`
+
+| Step            | Command                                             | Fails when                                                      |
+| --------------- | --------------------------------------------------- | --------------------------------------------------------------- |
+| Install         | `pnpm install --frozen-lockfile`                    | The lockfile is out of date                                     |
+| Browser         | `pnpm exec playwright install --with-deps chromium` | The download fails                                              |
+| E2E             | `pnpm test:e2e`                                     | The E2E build, its manifest check, or any Playwright test fails |
+| Report artifact | `upload-artifact` (failure only)                    | Never; uploads `playwright-report/` and `test-results/` traces  |
+
+Traces and screenshots come from the local test application only. They never include a real
+site's data.
 
 ## Action pinning
 
