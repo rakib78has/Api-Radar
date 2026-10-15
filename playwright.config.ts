@@ -14,8 +14,9 @@ export default defineConfig({
   forbidOnly: ci,
   timeout: 30_000,
   expect: { timeout: 5_000 },
+  // In CI, failures also appear as annotations on the run and pull request.
   reporter: ci
-    ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
+    ? [['github'], ['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
     : 'list',
   outputDir: 'test-results',
   use: { trace: 'retain-on-failure' },

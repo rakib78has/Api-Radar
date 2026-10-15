@@ -25,6 +25,8 @@ export default defineConfig({
   timeout: 30_000,
   outputDir: '../../test-results/runner',
   reporter: [
+    // In CI, failures also appear as annotations on the run and pull request.
+    ...(ci ? [['github'] as const] : []),
     ['list'],
     ['junit', { outputFile: '../../reports/runner/junit.xml' }],
     ['html', { open: 'never', outputFolder: '../../reports/runner/html' }],
