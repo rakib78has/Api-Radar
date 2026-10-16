@@ -1,11 +1,12 @@
 # Changelog
 
-All notable changes to this project are documented here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
-[Semantic Versioning](https://semver.org/). The release workflow publishes the section matching
-the tag as the release notes.
+All notable changes to this project are documented here. Versions follow
+[Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+From 0.1.0 on, this file is maintained by
+[release-please](https://github.com/googleapis/release-please). New entries are generated from
+[Conventional Commit](https://www.conventionalcommits.org/) pull-request titles, so don't edit
+upcoming entries by hand. Change the PR title instead (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## [0.1.0] - 2026-10-15
 

@@ -71,54 +71,118 @@ CodeQL runs the `security-extended` JavaScript and TypeScript queries on pull re
 `main`, and weekly. Results appear under **Security → Code scanning**. The job has
 `security-events: write` and nothing else.
 
+## `pr-title.yml`: Conventional Commit titles
+
+Pull requests are squash-merged, so the PR title becomes the commit message that release-please
+reads. This workflow fails a PR whose title is not a Conventional Commit. Allowed types are
+`feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore` and `revert`, and the
+description must start in lower case.
+
+It uses `pull_request_target`, so it also works for pull requests from forks. It never checks
+out or runs PR code; it reads only the title. Because of `pull_request_target`, the workflow's
+configuration comes from `main`, so it starts checking PRs once it is merged. See
+[CONTRIBUTING.md](../CONTRIBUTING.md) for the rules.
+
 ## `release.yml`: releases
 
-**Trigger:** pushing a tag `vMAJOR.MINOR.PATCH`, or running the workflow by hand for an existing
-tag.
+Releases are automated with [release-please](https://github.com/googleapis/release-please). The
+release PR is the human sign-off: nobody tags, bumps versions or edits the changelog by hand.
 
-**Job `verify` (read-only):** checks out the tag, then:
+```
+feat/fix PRs merged to main
+        │
+        ▼
+release-please ── opens or updates "chore: release X.Y.Z" (versions in both package.json
+        │          files, the .release-please-manifest.json, and CHANGELOG.md)
+        │  maintainer reviews and merges the release PR
+        ▼
+release-please ── tags vX.Y.Z (force-tag-creation) and creates a DRAFT release with the notes
+        ▼
+verify          ── release:check, pnpm check, pnpm security, extension E2E, regression
+        │          scenarios, package and load the zip in Chromium, upload the artifact
+        ▼
+publish         ── [approval: environment "release"] checksums, provenance attestation,
+        │          attach zip, files.txt and SHA256SUMS, publish the release as Latest
+        ▼
+chrome-web-store ─ [only if configured] [approval: environment "chrome-web-store"]
+                   upload with Chrome Web Store API V2, submit for review (staged by default)
+```
 
-1. `pnpm release:check`: the tag matches both package versions and has a CHANGELOG section.
-2. `pnpm check` and `pnpm security`.
-3. The extension E2E suite, the regression scenarios, and `pnpm test:package`, which builds the
-   zip and loads it in Chromium.
-4. Uploads `release/` as an artifact.
+| Job                | Permissions                                   | Notes                                                                                                   |
+| ------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `release-please`   | `contents`, `pull-requests`, `issues`: write  | Runs on every push to `main`; does nothing unless there are releasable commits                          |
+| `verify`           | read-only                                     | Runs only when a release was just created, or for a manual run                                          |
+| `publish`          | `contents`, `id-token`, `attestations`: write | In the `release` environment                                                                            |
+| `chrome-web-store` | read-only                                     | In the `chrome-web-store` environment; skipped unless `CWS_EXTENSION_ID` and `CWS_PUBLISHER_ID` are set |
 
-**Job `draft`** runs in the `release` environment and needs `contents: write`, `id-token: write`
-and `attestations: write`. It:
+**Version rules** (from PR titles):
 
-1. downloads the verified package and re-checks `SHA256SUMS`;
-2. writes the release notes from CHANGELOG.md;
-3. attests build provenance for the zip;
-4. creates a **draft** GitHub release.
+- `fix` and `perf` give a patch release.
+- `feat` gives a minor release.
+- `!` or `BREAKING CHANGE` gives a major release; before 1.0.0, `bump-minor-pre-major` makes it a
+  minor release.
+- `docs`, `chore`, `ci`, `test`, `refactor` and `build` alone do not trigger a release.
 
-Nothing is ever published to the Chrome Web Store automatically.
+**Configuration:** `release-please-config.json` and `.release-please-manifest.json`. The
+`extra-files` entry keeps `apps/extension/package.json` (the manifest version) in step with the
+root version, and `release:check` fails the run if they ever disagree.
 
-The tag reaches scripts only through the `RELEASE_TAG` environment variable, never through
-expression interpolation. `release:check` rejects anything that is not strict semver before the
-tag is used.
+**Manual run:** **Actions → Release → Run workflow** with an existing tag rebuilds and verifies
+that tag and attaches its assets. If the release does not exist yet, it creates one with the
+notes from CHANGELOG.md. Use this for a tag created by hand, or to retry after a failure.
 
-### Repository settings to enable (once, by a maintainer)
+**Rollback:** a published GitHub release can be edited back to draft, or deleted, under
+**Releases**. A store submission can be cancelled in the Developer Dashboard. Ship the fix as the
+next patch version, because a version number is never reused.
 
-| Setting                                                                                                            | Why                                                                    |
-| ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| **Settings → Environments → `release`**: required reviewers                                                        | Every release needs a person's approval                                |
-| **Settings → Rules → Rulesets**: protect `main` (PR + passing checks) and tags `v*` (restricted creation)          | Only reviewed code is tagged, and only maintainers create release tags |
-| **Settings → Code security**: secret scanning, push protection, Dependabot alerts, private vulnerability reporting | GitHub-side detection that complements the repository checks           |
+### Repository settings (once, by a maintainer)
 
-Each third-party action is pinned to a full commit SHA, with the tag in a trailing comment. The
-SHAs were resolved from the upstream repositories with `git ls-remote --tags`. Annotated tags were
-dereferenced (`^{}`) to their commit.
+| Setting                                                                                                                                                 | Why                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Settings → Actions → General → Workflow permissions:** allow GitHub Actions to create and approve pull requests                                       | Required for release-please to open the release PR with `GITHUB_TOKEN` |
+| **Settings → General → Pull Requests:** allow squash merging only; default commit message "Pull request title"                                          | Makes the checked PR title the commit message                          |
+| **Settings → Environments → `release`:** required reviewers                                                                                             | A person approves every release before it is published                 |
+| **Settings → Environments → `chrome-web-store`:** required reviewers; store secrets and variables (below)                                               | A second approval before anything reaches the store                    |
+| **Settings → Rules → Rulesets:** `main` requires a PR, passing checks (CI, PR title) and no force-push; tags `v*` restricted to maintainers and Actions | Only reviewed code is released                                         |
+| **Settings → Advanced Security:** dependency graph, Dependabot alerts, secret scanning, push protection, private vulnerability reporting                | GitHub-side detection that complements the repository checks           |
 
-| Action                    | Tag    | Commit                                     |
-| ------------------------- | ------ | ------------------------------------------ |
-| `actions/checkout`        | v7.0.1 | `3d3c42e5aac5ba805825da76410c181273ba90b1` |
-| `pnpm/action-setup`       | v6.1.0 | `ea17c68df8912ef543352723c149a84f56e3d413` |
-| `actions/setup-node`      | v7.1.0 | `949feb2413d6458794dcd2491c4babbbce0c15c1` |
-| `actions/upload-artifact` | v7.0.2 | `cf430e030ddbb5b0abf93d22962f4752f3646cd9` |
+**CI on release PRs (optional).** GitHub does not run workflows for PRs opened with
+`GITHUB_TOKEN`, so the release PR shows no checks. That is safe: the release PR only changes
+versions and the changelog, and `verify` re-runs every gate on the tagged commit before
+anything is published. But a ruleset that requires checks will block merging it. To get normal
+CI on release PRs:
 
-To update an action, resolve the new tag's commit the same way, then replace both the SHA and the
-comment.
+1. Create a GitHub App with **Contents: read and write** and **Pull requests: read and write**,
+   and install it on the repository.
+2. Set the repository variable `RELEASE_APP_CLIENT_ID` and the secret `RELEASE_APP_PRIVATE_KEY`.
+
+release-please then acts as the app, and its PRs and tags trigger workflows like a person's
+would.
+
+### Chrome Web Store submission (optional)
+
+The job uses the Chrome Web Store API **V2**; V1 reached end of support on 2026-10-15. It
+uploads to an **existing** item, because the first listing must be created by hand in the
+[Developer Dashboard](https://chrome.google.com/webstore/devconsole).
+
+1. Create the item once by hand: upload the first zip and fill in the listing and the privacy
+   form.
+2. In Google Cloud, enable the Chrome Web Store API and create an OAuth client (type "Web
+   application", redirect URI `https://developers.google.com/oauthplayground`).
+3. In the [OAuth Playground](https://developers.google.com/oauthplayground), use your own client
+   to authorise the scope `https://www.googleapis.com/auth/chromewebstore` and obtain a refresh
+   token.
+4. In the `chrome-web-store` environment, add:
+   - **secrets:** `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, `CWS_REFRESH_TOKEN`;
+   - **variables:** `CWS_PUBLISHER_ID` (Developer Dashboard → Publisher → Settings) and
+     `CWS_EXTENSION_ID` (the item's 32-letter id);
+   - optionally `CWS_PUBLISH_TYPE`.
+5. Choose `CWS_PUBLISH_TYPE`:
+   - `STAGED_PUBLISH` (default): after review passes, you press Publish in the dashboard.
+   - `DEFAULT_PUBLISH`: the item goes live automatically after review.
+
+The store rejects an upload whose manifest version is not higher than the published one, so a
+failed or repeated run never overwrites a live version.
 
 ## Not yet implemented
 
