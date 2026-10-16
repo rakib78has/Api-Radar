@@ -14,7 +14,7 @@ export function versionFromTag(tag: string): string | null {
  */
 export function releaseNotes(changelog: string, version: string): string | null {
   const lines = changelog.split(/\r?\n/);
-  const escaped = version.replace(/\./g, '\\.');
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const heading = new RegExp(
     `^## \\[${escaped}\\](?: - \\d{4}-\\d{2}-\\d{2}|\\(https://[^\\s)]+\\) \\(\\d{4}-\\d{2}-\\d{2}\\))$`,
   );
