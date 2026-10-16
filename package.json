@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc -b tsconfig.build.json && pnpm --filter @api-qa/extension build",
-    "clean": "tsc -b tsconfig.build.json --clean",
+    "clean": "node scripts/clean.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings=0",
