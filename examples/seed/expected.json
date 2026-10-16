@@ -1,0 +1,35 @@
+{
+  "description": "What the engine must produce for observations.json with rules.json. pnpm seed:check and the integration suite both enforce this.",
+  "storedRequests": 26,
+  "droppedRequests": 2,
+  "findings": {
+    "duplicate-request": 1,
+    "retry-loop": 1,
+    "excessive-polling": 1,
+    "request-after-navigation": 2,
+    "forbidden-endpoint": 1,
+    "missing-required-endpoint": 1,
+    "unexpected-call-count": 1
+  },
+  "regressionTypes": [
+    "regression-request-count",
+    "regression-failure-rate",
+    "regression-new-endpoint",
+    "regression-missing-endpoint",
+    "regression-new-finding"
+  ],
+  "secrets": [
+    "SEED-SECRET-1",
+    "SEED-SECRET-2",
+    "SEED-SECRET-3",
+    "SEED-SECRET-4",
+    "SeedSecret5",
+    "SEED-SECRET-6",
+    "SEED-SECRET-7"
+  ],
+  "redactedSamples": [
+    "https://shop.example/api/search?q=shoes&access_token=[REDACTED]",
+    "https://shop.example/api/reset/:token",
+    "https://shop.example/dashboard?session=[REDACTED]"
+  ]
+}

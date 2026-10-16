@@ -112,6 +112,27 @@ pnpm check      # format, lint, typecheck, tests with coverage, build, manifest 
 pnpm test:e2e   # the unpacked extension in Chromium
 ```
 
+### Seed data: is everything still working?
+
+`examples/seed/` holds a recorded shop workflow with one of every problem the engine detects:
+
+- duplicate orders;
+- a retry loop;
+- fast polling;
+- stale and route-change requests;
+- forbidden, missing and over-called endpoints.
+
+It also plants secrets in every channel that must be redacted, and comes with rules, a baseline
+and the expected findings.
+
+```sh
+pnpm seed:check
+```
+
+The check runs the seed through normalisation and redaction, analysis, baseline comparison and
+report export, then prints a PASS/FAIL line per check. Open `reports/seed/api-qa-report.html` to
+see the resulting report. The same check runs in CI as part of the integration suite.
+
 ## Commands
 
 | Command                  | What it does                                                                       |
@@ -141,6 +162,7 @@ pnpm test:e2e   # the unpacked extension in Chromium
 | `pnpm test:tooling`      | Tests for the release and security tooling                                         |
 | `pnpm icons`             | Regenerate the extension icons (`pnpm icons:check` verifies them)                  |
 | `pnpm package:extension` | Build, validate and zip the extension into `release/`, with checksums              |
+| `pnpm seed:check`        | Run the seed workflow end to end and print PASS/FAIL per check                     |
 | `pnpm test:package`      | Package, then load the release zip in Chromium                                     |
 | `pnpm release:check`     | Check a tag against the package versions and CHANGELOG.md                          |
 | `pnpm validate:manifest` | Checks permissions, CSP, referenced files and remote code in `apps/extension/dist` |
