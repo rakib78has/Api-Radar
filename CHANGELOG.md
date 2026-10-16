@@ -8,6 +8,14 @@ From 0.1.0 on, this file is maintained by
 [Conventional Commit](https://www.conventionalcommits.org/) pull-request titles, so don't edit
 upcoming entries by hand. Change the PR title instead (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
+## [0.1.1](https://github.com/rakib78has/Api-Radar/compare/v0.1.0...v0.1.1) (2026-10-16)
+
+
+### Bug Fixes
+
+* make pnpm clean remove all generated output ([b779eda](https://github.com/rakib78has/Api-Radar/commit/b779eda8a3d5f17005844a72d7af37515c6665a5))
+* make pnpm clean remove all generated output ([c756010](https://github.com/rakib78has/Api-Radar/commit/c7560108ca9ca4bdd75f124b3cf4b7212191d9cc))
+
 ## [0.1.0] - 2026-10-15
 
 First release: a Chrome extension for manual API QA and a Playwright runner for automated
