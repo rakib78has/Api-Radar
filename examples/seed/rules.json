@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "name": "Seed: shop workflow",
+  "description": "Turns on every detector for the seed capture.",
+  "retries": { "maxAttempts": 3 },
+  "navigation": { "routeChanges": true },
+  "polling": [
+    {
+      "id": "notifications-poll",
+      "match": { "method": "GET", "path": "/api/notifications" },
+      "expectedIntervalMs": 1000
+    }
+  ],
+  "endpoints": [
+    { "id": "no-v1", "match": { "path": "/api/v1/**" }, "forbidden": true },
+    { "id": "wishlist-required", "match": { "path": "/api/wishlist" }, "required": true },
+    {
+      "id": "profile-once",
+      "match": { "method": "GET", "path": "/api/profile" },
+      "expectedCount": 1
+    }
+  ]
+}

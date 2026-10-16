@@ -41,9 +41,13 @@
     "security": "pnpm security:secrets && pnpm security:lockfile && pnpm security:audit && pnpm test:security",
     "release:check": "node scripts/check-release.ts",
     "package:extension": "pnpm build && pnpm validate:manifest && node scripts/package-extension.ts",
-    "test:package": "pnpm package:extension && API_QA_PACKAGE_TEST=1 playwright test --grep @package"
+    "test:package": "pnpm package:extension && API_QA_PACKAGE_TEST=1 playwright test --grep @package",
+    "seed:check": "tsc -b tsconfig.build.json && node scripts/seed-check.ts"
   },
   "devDependencies": {
+    "@api-qa/contracts": "workspace:*",
+    "@api-qa/core": "workspace:*",
+    "@api-qa/reporting": "workspace:*",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
     "@types/chrome": "0.3.4",
@@ -53,6 +57,7 @@
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.1",
-    "vitest": "5.0.3"
+    "vitest": "5.0.3",
+    "zod": "4.6.6"
   }
 }

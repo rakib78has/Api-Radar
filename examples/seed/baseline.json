@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "name": "seed-shop",
+  "createdAt": 1791900000000,
+  "ruleSetName": "Seed: shop workflow",
+  "endpoints": [
+    {
+      "endpoint": "GET https://shop.example/api/cart",
+      "requestCount": 1,
+      "failureCount": 0,
+      "timedRequestCount": 1,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "POST https://shop.example/api/orders",
+      "requestCount": 1,
+      "failureCount": 0,
+      "timedRequestCount": 1,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "GET https://shop.example/api/payments/status",
+      "requestCount": 1,
+      "failureCount": 0,
+      "timedRequestCount": 1,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "GET https://shop.example/api/notifications",
+      "requestCount": 6,
+      "failureCount": 0,
+      "timedRequestCount": 6,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "GET https://shop.example/api/search",
+      "requestCount": 1,
+      "failureCount": 0,
+      "timedRequestCount": 1,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "POST https://shop.example/api/login",
+      "requestCount": 1,
+      "failureCount": 0,
+      "timedRequestCount": 1,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "GET https://shop.example/api/reset/:token",
+      "requestCount": 1,
+      "failureCount": 0,
+      "timedRequestCount": 1,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "GET https://shop.example/api/profile",
+      "requestCount": 2,
+      "failureCount": 0,
+      "timedRequestCount": 2,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "GET https://shop.example/api/live-scores",
+      "requestCount": 4,
+      "failureCount": 0,
+      "timedRequestCount": 4,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "GET https://shop.example/api/feed",
+      "requestCount": 1,
+      "failureCount": 0,
+      "timedRequestCount": 1,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "GET https://shop.example/api/recommendations",
+      "requestCount": 1,
+      "failureCount": 1,
+      "timedRequestCount": 1,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    },
+    {
+      "endpoint": "GET https://shop.example/api/legacy-banner",
+      "requestCount": 1,
+      "failureCount": 0,
+      "timedRequestCount": 1,
+      "durationP50Ms": 20,
+      "durationP95Ms": 20
+    }
+  ],
+  "findingKeys": [
+    { "type": "excessive-polling", "endpoint": "GET https://shop.example/api/notifications" },
+    { "type": "missing-required-endpoint", "endpoint": null }
+  ]
+}
