@@ -8,6 +8,14 @@ From 0.1.0 on, this file is maintained by
 [Conventional Commit](https://www.conventionalcommits.org/) pull-request titles, so don't edit
 upcoming entries by hand. Change the PR title instead (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
+## [0.1.2](https://github.com/rakib78has/Api-Radar/compare/v0.1.1...v0.1.2) (2026-10-16)
+
+
+### Bug Fixes
+
+* **release:** leave release-please's generated changelog out of forma… ([3acb7e8](https://github.com/rakib78has/Api-Radar/commit/3acb7e87b8259e3206a9ecaec3b486603d075842))
+* **release:** leave release-please's generated changelog out of formatting checks ([2723467](https://github.com/rakib78has/Api-Radar/commit/2723467d2724c4e71579e658c386957607dbfa85))
+
 ## [0.1.1](https://github.com/rakib78has/Api-Radar/compare/v0.1.0...v0.1.1) (2026-10-16)
 
 
