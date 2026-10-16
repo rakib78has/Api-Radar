@@ -175,6 +175,29 @@ describe('release checks', () => {
     expect(releaseNotes('## [1x2x0] - 2026-01-01\n\nNotes', '1.2.0')).toBeNull();
   });
 
+  it('reads the headings release-please writes', () => {
+    const generated = [
+      '# Changelog',
+      '',
+      '## [0.2.0](https://github.com/rakib78has/Api-Radar/compare/v0.1.0...v0.2.0) (2026-10-20)',
+      '',
+      '### Features',
+      '',
+      '* import HAR files ([#9](https://github.com/rakib78has/Api-Radar/issues/9)) ([abc1234](https://github.com/rakib78has/Api-Radar/commit/abc1234))',
+      '',
+      '## [0.1.0] - 2026-10-15',
+      '',
+      '- First release.',
+    ].join('\n');
+    expect(releaseNotes(generated, '0.2.0')).toMatch(/^### Features\n\n\* import HAR files/);
+    expect(releaseNotes(generated, '0.1.0')).toBe('- First release.');
+    // A heading without a compare link or date is not a release heading.
+    expect(releaseNotes('## [0.2.0]\n\nNotes', '0.2.0')).toBeNull();
+    expect(
+      releaseNotes('## [0.2.0](javascript:alert(1)) (2026-10-20)\n\nNotes', '0.2.0'),
+    ).toBeNull();
+  });
+
   it('accepts a consistent release and lists every inconsistency otherwise', () => {
     const ok = checkRelease({
       tag: 'v1.2.0',

@@ -145,18 +145,19 @@ Reports contain sanitised findings and endpoint statistics only, never the reque
 
 ## Supply chain
 
-| Control                                             | Where                                                                                                                               |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Exact versions, committed lockfile, frozen installs | `package.json`, `pnpm-lock.yaml`, every CI job                                                                                      |
-| No dependency install scripts                       | `strictDepBuilds: true` (pnpm-workspace.yaml); no package in the tree needs one today                                               |
-| No freshly published versions                       | `minimumReleaseAge: 4320`: pnpm will not resolve a version published less than 3 days ago                                           |
-| Registry and integrity policy                       | `pnpm security:lockfile`: npm registry only, sha512 for every package, workspace links inside the repo                              |
-| Known vulnerabilities                               | `pnpm security:audit` (CI), Dependency Review (pull requests), Dependabot alerts (repository setting)                               |
-| Licences                                            | Dependency Review allowlist                                                                                                         |
-| Committed secrets                                   | `pnpm security:secrets` (CI); GitHub secret scanning and push protection (repository setting)                                       |
-| Static analysis                                     | CodeQL `security-extended`                                                                                                          |
-| CI actions                                          | Pinned to full commit SHAs; least-privilege `permissions`; `persist-credentials: false`                                             |
-| Release integrity                                   | Reproducible zip, `SHA256SUMS`, per-file checksums, build-provenance attestation, draft-only release behind an approval environment |
+| Control                                             | Where                                                                                                                                                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Exact versions, committed lockfile, frozen installs | `package.json`, `pnpm-lock.yaml`, every CI job                                                                                                                                                   |
+| No dependency install scripts                       | `strictDepBuilds: true` (pnpm-workspace.yaml); no package in the tree needs one today                                                                                                            |
+| No freshly published versions                       | `minimumReleaseAge: 4320`: pnpm will not resolve a version published less than 3 days ago                                                                                                        |
+| Registry and integrity policy                       | `pnpm security:lockfile`: npm registry only, sha512 for every package, workspace links inside the repo                                                                                           |
+| Known vulnerabilities                               | `pnpm security:audit` (CI), Dependency Review (pull requests), Dependabot alerts (repository setting)                                                                                            |
+| Licences                                            | Dependency Review allowlist                                                                                                                                                                      |
+| Committed secrets                                   | `pnpm security:secrets` (CI); GitHub secret scanning and push protection (repository setting)                                                                                                    |
+| Static analysis                                     | CodeQL `security-extended`                                                                                                                                                                       |
+| CI actions                                          | Pinned to full commit SHAs; least-privilege `permissions`; `persist-credentials: false`                                                                                                          |
+| Release automation                                  | Versions and changelog from reviewed PRs (release-please); every gate re-run on the tag; `release` and `chrome-web-store` approval environments; store credentials only in the store environment |
+| Release integrity                                   | Reproducible zip, `SHA256SUMS`, per-file checksums, build-provenance attestation, draft-only release behind an approval environment                                                              |
 
 The secret scanner looks for well-known token formats (AWS, GitHub, GitLab, Slack, Stripe, Google,
 npm, private keys, JWTs). It also flags random-looking values assigned to credential names, and

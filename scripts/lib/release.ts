@@ -7,12 +7,17 @@ export function versionFromTag(tag: string): string | null {
 }
 
 /**
- * The body of the `## [version] - YYYY-MM-DD` section of a Keep a Changelog
- * file, or null if the section is missing or empty.
+ * The body of a version's CHANGELOG section, or null if it is missing or
+ * empty. Accepts both heading styles used in this changelog:
+ * - Keep a Changelog: `## [1.2.0] - 2026-10-15`
+ * - release-please:   `## [1.2.0](https://github.com/o/r/compare/v1.1.0...v1.2.0) (2026-10-15)`
  */
 export function releaseNotes(changelog: string, version: string): string | null {
   const lines = changelog.split(/\r?\n/);
-  const heading = new RegExp(`^## \\[${version.replace(/\./g, '\\.')}\\] - \\d{4}-\\d{2}-\\d{2}$`);
+  const escaped = version.replace(/\./g, '\\.');
+  const heading = new RegExp(
+    `^## \\[${escaped}\\](?: - \\d{4}-\\d{2}-\\d{2}|\\(https://[^\\s)]+\\) \\(\\d{4}-\\d{2}-\\d{2}\\))$`,
+  );
   const start = lines.findIndex((line) => heading.test(line));
   if (start === -1) {
     return null;
@@ -54,7 +59,7 @@ export function checkRelease(inputs: ReleaseInputs): ReleaseCheck {
   }
   const notes = releaseNotes(inputs.changelog, version);
   if (notes === null) {
-    issues.push(`CHANGELOG.md has no non-empty "## [${version}] - YYYY-MM-DD" section`);
+    issues.push(`CHANGELOG.md has no non-empty section for ${version}`);
   }
   return { issues, version, notes };
 }

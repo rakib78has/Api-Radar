@@ -205,27 +205,37 @@ manual dispatch. Its jobs run in parallel:
 - **dependency-review** (pull requests only): blocks new vulnerable or unapproved-licence
   dependencies.
 
-[CodeQL](.github/workflows/codeql.yml) runs static analysis on every change and weekly. The
-[release workflow](.github/workflows/release.yml) runs on version tags.
+[CodeQL](.github/workflows/codeql.yml) runs static analysis on every change and weekly.
+[PR title](.github/workflows/pr-title.yml) enforces Conventional Commits, and the
+[release workflow](.github/workflows/release.yml) runs release-please on every push to `main`.
 
 Actions are pinned to commit SHAs. See [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Releasing
 
-1. Update `version` in `package.json` and `apps/extension/package.json`.
-2. Move the `[Unreleased]` notes in `CHANGELOG.md` into a `## [x.y.z] - YYYY-MM-DD` section.
-3. Run `pnpm release:check vX.Y.Z`.
-4. Merge, then push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
-5. The [release workflow](.github/workflows/release.yml) re-runs every gate on the tagged commit,
-   then waits for approval in the `release` environment. Once approved, it creates a **draft**
-   GitHub release with:
-   - the zip;
-   - a per-file checksum list;
-   - `SHA256SUMS`;
-   - a build-provenance attestation.
-6. Review the draft. Verify the zip with `sha256sum --check SHA256SUMS` and
-   `gh attestation verify <zip> --repo rakib78has/Api-Radar`. Then publish the draft and upload
-   the zip to the Chrome Web Store by hand.
+Releases are automated with [release-please](https://github.com/googleapis/release-please) and
+[Conventional Commits](https://www.conventionalcommits.org/). See
+[CONTRIBUTING.md](CONTRIBUTING.md) and [docs/ci-cd.md](docs/ci-cd.md#releaseyml-releases).
+
+1. Merge pull requests with Conventional Commit titles (`feat: …`, `fix: …`). The PR-title check
+   enforces this.
+2. release-please keeps a **"chore: release X.Y.Z"** pull request open. It bumps both
+   `package.json` versions and writes CHANGELOG.md. Review it like any other PR.
+3. **Merge the release PR.** The Release workflow then:
+   - tags `vX.Y.Z` and drafts the GitHub release;
+   - re-runs every gate on the tagged commit;
+   - packages the extension and loads it in Chromium;
+   - after approval in the `release` environment, attaches the zip, `SHA256SUMS` and a
+     build-provenance attestation, and publishes the release.
+4. **Optional:** if the Chrome Web Store is configured, a second approval uploads the zip and
+   submits it for review.
+
+To check a downloaded release:
+
+```sh
+sha256sum --check SHA256SUMS
+gh attestation verify api-qa-inspector-X.Y.Z.zip --repo rakib78has/Api-Radar
+```
 
 Packaging is reproducible: the same commit produces a byte-identical zip on any machine.
 
