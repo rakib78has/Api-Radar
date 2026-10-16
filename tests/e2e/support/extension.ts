@@ -25,13 +25,15 @@ interface TestFixtures {
 
 export const test = base.extend<TestFixtures, WorkerFixtures>({
   extensionContext: [
-    // eslint-disable-next-line no-empty-pattern -- Playwright requires a destructuring pattern here.
-    async ({}, use) => {
+    async ({ headless, launchOptions }, use) => {
       if (!existsSync(EXTENSION_DIR)) {
         throw new Error(`Build the E2E extension first: pnpm --filter @api-qa/extension build:e2e`);
       }
       // Extensions need a persistent context; channel "chromium" uses the new headless mode.
+      // `headless` follows --headed; slowMo comes from API_QA_SLOW_MO (playwright.config.ts).
       const context = await chromium.launchPersistentContext('', {
+        headless,
+        ...(launchOptions.slowMo === undefined ? {} : { slowMo: launchOptions.slowMo }),
         channel: 'chromium',
         args: [`--disable-extensions-except=${EXTENSION_DIR}`, `--load-extension=${EXTENSION_DIR}`],
       });

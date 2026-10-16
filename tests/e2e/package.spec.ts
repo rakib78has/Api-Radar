@@ -23,7 +23,10 @@ const archive = (() => {
 })();
 
 test.describe('packaged extension @package', () => {
-  test('the release zip loads in Chromium with the production manifest', async () => {
+  test('the release zip loads in Chromium with the production manifest', async ({
+    headless,
+    launchOptions,
+  }) => {
     if (archive === undefined) {
       throw new Error('No release archive in release/; run pnpm package:extension first.');
     }
@@ -38,6 +41,8 @@ test.describe('packaged extension @package', () => {
     expect(manifest).toHaveProperty('icons.128', 'icons/icon-128.png');
 
     const context = await chromium.launchPersistentContext('', {
+      headless,
+      ...(launchOptions.slowMo === undefined ? {} : { slowMo: launchOptions.slowMo }),
       channel: 'chromium',
       args: [`--disable-extensions-except=${directory}`, `--load-extension=${directory}`],
     });

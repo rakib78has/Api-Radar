@@ -1,6 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
 const ci = process.env.CI === 'true';
+/** Milliseconds to pause between browser actions, so headed runs can be followed by eye. */
+const slowMo = Number(process.env.API_QA_SLOW_MO ?? '0');
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -19,5 +21,8 @@ export default defineConfig({
     ? [['github'], ['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
     : 'list',
   outputDir: 'test-results',
-  use: { trace: 'retain-on-failure' },
+  use: {
+    trace: 'retain-on-failure',
+    ...(slowMo > 0 ? { launchOptions: { slowMo } } : {}),
+  },
 });

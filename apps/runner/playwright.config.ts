@@ -3,6 +3,8 @@ import { defineConfig } from '@playwright/test';
 import { TEST_APP_ORIGIN } from './src/fixtures/test-app.js';
 
 const ci = process.env.CI === 'true';
+/** Milliseconds to pause between browser actions, so headed runs can be followed by eye. */
+const slowMo = Number(process.env.API_QA_SLOW_MO ?? '0');
 
 export default defineConfig({
   testDir: 'src/scenarios',
@@ -36,5 +38,6 @@ export default defineConfig({
     browserName: 'chromium',
     channel: 'chromium',
     trace: 'retain-on-failure',
+    ...(slowMo > 0 ? { launchOptions: { slowMo } } : {}),
   },
 });
