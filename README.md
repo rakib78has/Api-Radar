@@ -135,38 +135,38 @@ see the resulting report. The same check runs in CI as part of the integration s
 
 ## Commands
 
-| Command                  | What it does                                                                       |
-| ------------------------ | ---------------------------------------------------------------------------------- |
-| `pnpm check`             | Every gate except the browser suite                                                |
-| `pnpm format`            | Rewrite files with Prettier                                                        |
-| `pnpm format:check`      | Verify formatting                                                                  |
-| `pnpm lint`              | ESLint with type-aware rules; warnings fail                                        |
-| `pnpm typecheck`         | `tsc` for root files, Playwright specs and every workspace                         |
-| `pnpm test`              | All Vitest projects                                                                |
-| `pnpm test:unit`         | Package unit tests (`packages/*/tests`)                                            |
-| `pnpm test:architecture` | Package-boundary rules                                                             |
-| `pnpm test:extension`    | Extension logic: capture, messaging, filters, manifest policy                      |
-| `pnpm test:integration`  | Cross-package pipeline and example rule files                                      |
-| `pnpm test:security`     | Redaction canaries and hostile input                                               |
-| `pnpm test:coverage`     | All Vitest projects with coverage gates; HTML report in `coverage/`                |
-| `pnpm test:smoke`        | Extension smoke tests in Chromium (`@smoke`)                                       |
-| `pnpm test:runner`       | Runner logic: CDP assembler, sessions, baselines, reports                          |
-| `pnpm test:regression`   | The 14 regression scenarios in Chromium against committed baselines                |
-| `pnpm baselines:update`  | Re-record baselines from `@baseline` tests (review the diff!)                      |
-| `pnpm test:e2e`          | Builds the E2E extension, validates it, runs every Playwright test                 |
-| `pnpm build`             | Builds the packages (`tsc -b`) and the extension (Vite) to `dist/`                 |
-| `pnpm security`          | Secret scan, lockfile policy, dependency audit, security and fuzz tests            |
-| `pnpm security:secrets`  | Scan tracked files for credential-shaped strings                                   |
-| `pnpm security:lockfile` | Enforce registry, integrity hashes and workspace links in the lockfile             |
-| `pnpm security:audit`    | `pnpm audit`, failing on high or critical vulnerabilities                          |
-| `pnpm test:tooling`      | Tests for the release and security tooling                                         |
-| `pnpm icons`             | Regenerate the extension icons (`pnpm icons:check` verifies them)                  |
-| `pnpm package:extension` | Build, validate and zip the extension into `release/`, with checksums              |
-| `pnpm seed:check`        | Run the seed workflow end to end and print PASS/FAIL per check                     |
-| `pnpm test:package`      | Package, then load the release zip in Chromium                                     |
-| `pnpm release:check`     | Check a tag against the package versions and CHANGELOG.md                          |
-| `pnpm validate:manifest` | Checks permissions, CSP, referenced files and remote code in `apps/extension/dist` |
-| `pnpm clean`             | Remove package build output                                                        |
+| Command                  | What it does                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------- |
+| `pnpm check`             | Every gate except the browser suite                                                   |
+| `pnpm format`            | Rewrite files with Prettier                                                           |
+| `pnpm format:check`      | Verify formatting                                                                     |
+| `pnpm lint`              | ESLint with type-aware rules; warnings fail                                           |
+| `pnpm typecheck`         | `tsc` for root files, Playwright specs and every workspace                            |
+| `pnpm test`              | All Vitest projects                                                                   |
+| `pnpm test:unit`         | Package unit tests (`packages/*/tests`)                                               |
+| `pnpm test:architecture` | Package-boundary rules                                                                |
+| `pnpm test:extension`    | Extension logic: capture, messaging, filters, manifest policy                         |
+| `pnpm test:integration`  | Cross-package pipeline and example rule files                                         |
+| `pnpm test:security`     | Redaction canaries and hostile input                                                  |
+| `pnpm test:coverage`     | All Vitest projects with coverage gates; HTML report in `coverage/`                   |
+| `pnpm test:smoke`        | Extension smoke tests in Chromium (`@smoke`)                                          |
+| `pnpm test:runner`       | Runner logic: CDP assembler, sessions, baselines, reports                             |
+| `pnpm test:regression`   | The 14 regression scenarios in Chromium against committed baselines                   |
+| `pnpm baselines:update`  | Re-record baselines from `@baseline` tests (review the diff!)                         |
+| `pnpm test:e2e`          | Builds the E2E extension, validates it, runs every Playwright test                    |
+| `pnpm build`             | Builds the packages (`tsc -b`) and the extension (Vite) to `dist/`                    |
+| `pnpm security`          | Secret scan, lockfile policy, dependency audit, security and fuzz tests               |
+| `pnpm security:secrets`  | Scan tracked files for credential-shaped strings                                      |
+| `pnpm security:lockfile` | Enforce registry, integrity hashes and workspace links in the lockfile                |
+| `pnpm security:audit`    | `pnpm audit`, failing on high or critical vulnerabilities                             |
+| `pnpm test:tooling`      | Tests for the release and security tooling                                            |
+| `pnpm icons`             | Regenerate the extension icons (`pnpm icons:check` verifies them)                     |
+| `pnpm package:extension` | Build, validate and zip the extension into `release/`, with checksums                 |
+| `pnpm seed:check`        | Run the seed workflow end to end and print PASS/FAIL per check                        |
+| `pnpm test:package`      | Package, then load the release zip in Chromium                                        |
+| `pnpm release:check`     | Check a tag against the package versions and CHANGELOG.md                             |
+| `pnpm validate:manifest` | Checks permissions, CSP, referenced files and remote code in `apps/extension/dist`    |
+| `pnpm clean`             | Remove all generated output: package and extension builds, coverage, reports, release |
 
 ## Repository layout
 
